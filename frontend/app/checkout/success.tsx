@@ -1,17 +1,24 @@
 import { View, Text, StyleSheet } from 'react-native'
 import { useRouter, useLocalSearchParams } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useQuery } from '@tanstack/react-query'
 import { colors } from '../../constants/colors'
 import { spacing } from '../../constants/spacing'
 import { typography } from '../../constants/typography'
 import { Button } from '../../components/ui/Button'
+import { orderService } from '../../services/orderService'
 
 export default function SuccessScreen() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
   const { orderId } = useLocalSearchParams<{ orderId?: string }>()
 
-  const orderNumber = 'ORD-' + Date.now()
+  const { data: order } = useQuery({
+    queryKey: ['order', orderId],
+    queryFn: () => orderService.getOrder(orderId!),
+    enabled: !!orderId,
+  })
+  const orderNumber = order?.orderNumber || ('ORD-' + Date.now())
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>

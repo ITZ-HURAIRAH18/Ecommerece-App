@@ -1,18 +1,35 @@
 import nodemailer from 'nodemailer'
 import { env } from '../config/env'
 
-const transporter = nodemailer.createTransport({
-  host: env.SMTP_HOST,
-  port: env.SMTP_PORT,
-  secure: env.SMTP_PORT === 465,
-  auth: {
-    user: env.SMTP_USER,
-    pass: env.SMTP_PASS,
-  },
-})
+function createTransporter() {
+  if (!env.SMTP_HOST || !env.SMTP_USER || !env.SMTP_PASS) {
+    return null
+  }
+  return nodemailer.createTransport({
+    host: env.SMTP_HOST,
+    port: env.SMTP_PORT,
+    secure: env.SMTP_PORT === 465,
+    auth: {
+      user: env.SMTP_USER,
+      pass: env.SMTP_PASS,
+    },
+  })
+}
+
+async function trySend(mailOptions: nodemailer.SendMailOptions): Promise<boolean> {
+  const transporter = createTransporter()
+  if (!transporter) return false
+  try {
+    await transporter.sendMail(mailOptions)
+    return true
+  } catch (err) {
+    console.warn('Email send failed:', err)
+    return false
+  }
+}
 
 export async function sendOTP(to: string, otp: string): Promise<void> {
-  await transporter.sendMail({
+  await trySend({
     from: env.EMAIL_FROM,
     to,
     subject: 'Your OTP Code',
@@ -31,7 +48,7 @@ export async function sendOTP(to: string, otp: string): Promise<void> {
 }
 
 export async function sendPasswordReset(to: string, otp: string): Promise<void> {
-  await transporter.sendMail({
+  await trySend({
     from: env.EMAIL_FROM,
     to,
     subject: 'Password Reset Request',
@@ -50,7 +67,7 @@ export async function sendPasswordReset(to: string, otp: string): Promise<void> 
 }
 
 export async function sendOrderConfirmation(to: string, orderNumber: string): Promise<void> {
-  await transporter.sendMail({
+  await trySend({
     from: env.EMAIL_FROM,
     to,
     subject: `Order Confirmation - #${orderNumber}`,

@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native'
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useState } from 'react'
@@ -21,6 +21,7 @@ export default function CheckoutScreen() {
   const [city, setCity] = useState('')
   const [state, setState] = useState('')
   const [zip, setZip] = useState('')
+  const [country, setCountry] = useState('')
 
   const subtotal = total
   const shipping = subtotal >= 500 ? 0 : 49
@@ -28,8 +29,11 @@ export default function CheckoutScreen() {
   const grandTotal = subtotal + shipping - discount
 
   const handleContinue = () => {
-    if (!fullName || !phone || !street || !city || !state || !zip) return
-    const address = JSON.stringify({ fullName, phone, street, city, state, zip })
+    if (!fullName || !phone || !street || !city || !state || !zip || !country) {
+      Alert.alert('Missing Fields', 'Please fill in all shipping address fields.')
+      return
+    }
+    const address = JSON.stringify({ label: 'Shipping Address', fullName, phone, street, city, state, zip, country, isDefault: true })
     router.push(`/checkout/payment?address=${encodeURIComponent(address)}`)
   }
 
@@ -54,6 +58,7 @@ export default function CheckoutScreen() {
           <Input label="State" value={state} onChangeText={setState} placeholder="NY" style={{ flex: 1 }} />
         </View>
         <Input label="ZIP Code" value={zip} onChangeText={setZip} placeholder="10001" />
+        <Input label="Country" value={country} onChangeText={setCountry} placeholder="United States" />
 
         <CartSummary
           subtotal={subtotal}

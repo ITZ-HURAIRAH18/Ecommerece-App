@@ -33,7 +33,7 @@ export default function PaymentScreen() {
         shippingAddress,
         paymentMethod: selected,
       })
-      const orderId = data.data._id || data.data.order?._id
+      const orderId = data.data._id
       router.replace(`/checkout/success?orderId=${orderId}`)
     } catch (err: any) {
       Alert.alert('Order Failed', err?.response?.data?.message || 'Could not place order. Please try again.')

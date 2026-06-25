@@ -27,7 +27,11 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
   const otp = generateOtp()
   otpStore.set(email, { otp, expiresAt: new Date(Date.now() + 10 * 60 * 1000) })
 
-  await sendOTP(email, otp)
+  try {
+    await sendOTP(email, otp)
+  } catch (err) {
+    console.warn('Failed to send OTP email:', err)
+  }
 
   res.status(201).json(new ApiResponse(201, 'Account created. Please verify your email.'))
 })
@@ -136,7 +140,11 @@ export const forgotPassword = asyncHandler(async (req: Request, res: Response) =
   const otp = generateOtp()
   otpStore.set(email, { otp, expiresAt: new Date(Date.now() + 10 * 60 * 1000) })
 
-  await sendPasswordReset(email, otp)
+  try {
+    await sendPasswordReset(email, otp)
+  } catch (err) {
+    console.warn('Failed to send password reset email:', err)
+  }
 
   res.json(new ApiResponse(200, 'Password reset OTP sent to email'))
 })
