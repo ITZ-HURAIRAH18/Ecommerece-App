@@ -1,4 +1,5 @@
 import { Response } from 'express'
+import mongoose from 'mongoose'
 import { asyncHandler } from '../utils/asyncHandler'
 import { ApiResponse } from '../utils/ApiResponse'
 import { ApiError } from '../utils/ApiError'
@@ -129,7 +130,7 @@ export const getUsers = asyncHandler(async (req: AuthenticatedRequest, res: Resp
   const skip = (page - 1) * limit
 
   const [users, total] = await Promise.all([
-    User.find().sort({ createdAt: -1 }).skip(skip).limit(limit).select('-password -refreshToken'),
+    User.find().sort({ createdAt: -1 }).skip(skip).limit(limit).select('-passwordHash -refreshTokens'),
     User.countDocuments(),
   ])
 
@@ -141,6 +142,48 @@ export const getUsers = asyncHandler(async (req: AuthenticatedRequest, res: Resp
       pages: Math.ceil(total / limit),
     })
   )
+})
+
+export const createUser = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+  const { name, email, password, role } = req.body
+  const existing = await User.findOne({ email })
+  if (existing) throw new ApiError(409, 'Email already registered')
+
+  const user = await User.create({ name, email, passwordHash: password, role: role || 'customer' })
+  res.status(201).json(new ApiResponse(201, 'User created', user))
+})
+
+export const updateUser = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+  const { id } = req.params
+  const { name, email, role, phone } = req.body
+
+  const user = await User.findById(id)
+  if (!user) throw new ApiError(404, 'User not found')
+
+  if (email && email !== user.email) {
+    const existing = await User.findOne({ email })
+    if (existing) throw new ApiError(409, 'Email already in use')
+  }
+
+  if (name) user.name = name
+  if (email) user.email = email
+  if (role) user.role = role
+  if (phone !== undefined) user.phone = phone
+  await user.save()
+
+  res.json(new ApiResponse(200, 'User updated', user))
+})
+
+export const deleteUser = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    throw new ApiError(400, 'Invalid user ID')
+  }
+  if (req.user!._id === req.params.id) {
+    throw new ApiError(400, 'Cannot delete your own account')
+  }
+  const user = await User.findByIdAndDelete(req.params.id)
+  if (!user) throw new ApiError(404, 'User not found')
+  res.json(new ApiResponse(200, 'User deleted'))
 })
 
 export const getBanners = asyncHandler(async (_req: AuthenticatedRequest, res: Response) => {
@@ -155,6 +198,24 @@ export const createBanner = asyncHandler(async (req: AuthenticatedRequest, res: 
 
   const banner = await Banner.create({ image, title, link, order: order || 0 })
   res.status(201).json(new ApiResponse(201, 'Banner created', banner))
+})
+
+export const updateBanner = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+  const { id } = req.params
+  const { title, link, order, isActive } = req.body
+  const image = req.file ? (req.file as any).path : undefined
+
+  const banner = await Banner.findById(id)
+  if (!banner) throw new ApiError(404, 'Banner not found')
+
+  if (image) banner.image = image
+  if (title !== undefined) banner.title = title
+  if (link !== undefined) banner.link = link
+  if (order !== undefined) banner.order = order
+  if (isActive !== undefined) banner.isActive = isActive
+  await banner.save()
+
+  res.json(new ApiResponse(200, 'Banner updated', banner))
 })
 
 export const deleteBanner = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {

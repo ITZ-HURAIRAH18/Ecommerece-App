@@ -19,7 +19,13 @@ router.get('/categories', authenticate, authorize('admin'), categoryController.g
 router.post('/categories', authenticate, authorize('admin'), upload, categoryController.createCategory)
 router.get('/banners', authenticate, authorize('admin'), adminController.getBanners)
 router.post('/banners', authenticate, authorize('admin'), upload, adminController.createBanner)
+router.put('/banners/:id', authenticate, authorize('admin'), upload, adminController.updateBanner)
 router.delete('/banners/:id', authenticate, authorize('admin'), adminController.deleteBanner)
 router.get('/users', authenticate, authorize('admin'), adminController.getUsers)
+router.post('/users', authenticate, authorize('admin'), adminController.createUser)
+router.put('/users/:id', authenticate, authorize('admin'), adminController.updateUser)
+router.delete('/users/:id', authenticate, authorize('admin'), adminController.deleteUser)
+router.put('/categories/:id', authenticate, authorize('admin'), upload, categoryController.updateCategory)
+router.delete('/categories/:id', authenticate, authorize('admin'), categoryController.deleteCategory)
 
 export default router

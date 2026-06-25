@@ -1,12 +1,13 @@
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native'
+import { useState } from 'react'
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, Modal } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
-import { useQuery } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { colors } from '../../constants/colors'
 import { spacing, borderRadius } from '../../constants/spacing'
 import { typography } from '../../constants/typography'
 import { Badge } from '../../components/ui/Badge'
+import { Button } from '../../components/ui/Button'
 import { adminService } from '../../services/adminService'
 
 const statuses = ['placed', 'confirmed', 'processing', 'shipped', 'out_for_delivery', 'delivered', 'cancelled']
@@ -14,7 +15,10 @@ const statuses = ['placed', 'confirmed', 'processing', 'shipped', 'out_for_deliv
 export default function AdminOrders() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
+  const queryClient = useQueryClient()
   const [statusFilter, setStatusFilter] = useState('')
+  const [selectedOrder, setSelectedOrder] = useState<any>(null)
+  const [statusModal, setStatusModal] = useState(false)
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin', 'orders', statusFilter],
@@ -23,11 +27,23 @@ export default function AdminOrders() {
 
   const orders = data?.data?.data || []
 
+  const updateMutation = useMutation({
+    mutationFn: ({ id, orderStatus }: { id: string; orderStatus: string }) =>
+      adminService.updateOrderStatus(id, orderStatus),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['admin', 'orders'] }); setStatusModal(false) },
+    onError: (err: any) => Alert.alert('Error', err?.response?.data?.message || 'Failed'),
+  })
+
   const getBadgeVariant = (status: string) => {
-    if (['delivered', 'paid'].includes(status)) return 'success'
-    if (['cancelled', 'returned'].includes(status)) return 'error'
-    if (['shipped', 'out_for_delivery'].includes(status)) return 'primary'
-    return 'warning'
+    if (['delivered', 'paid'].includes(status)) return 'success' as const
+    if (['cancelled', 'returned'].includes(status)) return 'error' as const
+    if (['shipped', 'out_for_delivery'].includes(status)) return 'primary' as const
+    return 'warning' as const
+  }
+
+  const openStatusChange = (order: any) => {
+    setSelectedOrder(order)
+    setStatusModal(true)
   }
 
   return (
@@ -69,7 +85,7 @@ export default function AdminOrders() {
           keyExtractor={(item) => item._id}
           contentContainerStyle={styles.list}
           renderItem={({ item }) => (
-            <View style={styles.orderCard}>
+            <TouchableOpacity style={styles.orderCard} onPress={() => openStatusChange(item)}>
               <View style={styles.orderHeader}>
                 <Text style={styles.orderNumber}>{item.orderNumber}</Text>
                 <Badge label={item.orderStatus?.replace(/_/g, ' ')} variant={getBadgeVariant(item.orderStatus)} />
@@ -79,7 +95,7 @@ export default function AdminOrders() {
               <Text style={styles.orderDate}>
                 {new Date(item.createdAt).toLocaleDateString()}
               </Text>
-            </View>
+            </TouchableOpacity>
           )}
           ListEmptyComponent={
             <View style={styles.empty}>
@@ -88,6 +104,45 @@ export default function AdminOrders() {
           }
         />
       )}
+
+      <Modal visible={statusModal} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>
+              Update Status: {selectedOrder?.orderNumber}
+            </Text>
+            <View style={styles.statusGrid}>
+              {statuses.map((s) => (
+                <TouchableOpacity
+                  key={s}
+                  style={[
+                    styles.statusChip,
+                    selectedOrder?.orderStatus === s && styles.statusChipActive,
+                  ]}
+                  onPress={() =>
+                    updateMutation.mutate({ id: selectedOrder._id, orderStatus: s })
+                  }
+                >
+                  <Text
+                    style={[
+                      styles.statusChipText,
+                      selectedOrder?.orderStatus === s && styles.statusChipTextActive,
+                    ]}
+                  >
+                    {s.replace(/_/g, ' ')}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <Button
+              title="Cancel"
+              variant="outline"
+              onPress={() => setStatusModal(false)}
+              style={{ marginTop: spacing.md }}
+            />
+          </View>
+        </View>
+      </Modal>
     </View>
   )
 }
@@ -122,4 +177,21 @@ const styles = StyleSheet.create({
   orderDate: { ...typography.caption, color: colors.textSecondary, marginTop: 2 },
   empty: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.xl },
   emptyText: { ...typography.body, color: colors.textSecondary },
+  modalOverlay: {
+    flex: 1, justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.5)', padding: spacing.lg,
+  },
+  modalContent: {
+    backgroundColor: colors.background, borderRadius: borderRadius.card,
+    padding: spacing.lg,
+  },
+  modalTitle: { ...typography.heading, color: colors.textPrimary, marginBottom: spacing.md },
+  statusGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  statusChip: {
+    paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
+    borderRadius: borderRadius.pill, backgroundColor: colors.secondaryBg,
+    borderWidth: 1, borderColor: colors.border,
+  },
+  statusChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  statusChipText: { ...typography.caption, color: colors.textPrimary, textTransform: 'capitalize' },
+  statusChipTextActive: { color: colors.white },
 })

@@ -20,6 +20,7 @@ export default function AdminLayout() {
       <Stack.Screen name="orders" />
       <Stack.Screen name="banners" />
       <Stack.Screen name="users" />
+      <Stack.Screen name="product-form" />
     </Stack>
   )
 }

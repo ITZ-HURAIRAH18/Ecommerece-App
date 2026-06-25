@@ -11,7 +11,7 @@ interface InputProps {
   secureTextEntry?: boolean
   error?: string
   multiline?: boolean
-  keyboardType?: 'default' | 'email-address' | 'phone-pad'
+  keyboardType?: 'default' | 'email-address' | 'phone-pad' | 'decimal-pad' | 'number-pad'
   autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters'
   style?: ViewStyle
 }

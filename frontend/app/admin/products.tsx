@@ -1,7 +1,7 @@
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native'
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Image } from 'expo-image'
 import { useState } from 'react'
 import { colors } from '../../constants/colors'
@@ -13,6 +13,7 @@ import { formatPrice } from '../../utils/formatPrice'
 export default function AdminProducts() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
+  const queryClient = useQueryClient()
   const [page, setPage] = useState(1)
 
   const { data, isLoading } = useQuery({
@@ -23,6 +24,18 @@ export default function AdminProducts() {
   const products = data?.data?.data || []
   const pagination = data?.data?.pagination
 
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => adminService.deleteProduct(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'products'] }),
+  })
+
+  const confirmDelete = (id: string, name: string) => {
+    Alert.alert('Delete Product', `Delete "${name}"?`, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: () => deleteMutation.mutate(id) },
+    ])
+  }
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
@@ -30,7 +43,7 @@ export default function AdminProducts() {
           <Text style={styles.back}>← Back</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Products</Text>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => router.push('/admin/product-form')}>
           <Text style={styles.add}>+ Add</Text>
         </TouchableOpacity>
       </View>
@@ -45,7 +58,11 @@ export default function AdminProducts() {
           keyExtractor={(item) => item._id}
           contentContainerStyle={styles.list}
           renderItem={({ item }) => (
-            <View style={styles.productRow}>
+            <TouchableOpacity
+              style={styles.productRow}
+              onPress={() => router.push(`/admin/product-form?id=${item._id}`)}
+              onLongPress={() => confirmDelete(item._id, item.name)}
+            >
               <Image
                 source={{ uri: item.images?.[0] }}
                 style={styles.productImage}
@@ -56,7 +73,10 @@ export default function AdminProducts() {
                 <Text style={styles.productPrice}>{formatPrice(item.price)}</Text>
                 <Text style={styles.productStock}>Stock: {item.stock}</Text>
               </View>
-            </View>
+              <TouchableOpacity style={styles.deleteBtn} onPress={() => confirmDelete(item._id, item.name)}>
+                <Text style={styles.deleteText}>Delete</Text>
+              </TouchableOpacity>
+            </TouchableOpacity>
           )}
           ListEmptyComponent={
             <View style={styles.empty}>
@@ -89,6 +109,8 @@ const styles = StyleSheet.create({
   productName: { ...typography.body, color: colors.textPrimary, fontWeight: '600' },
   productPrice: { ...typography.caption, color: colors.primary, fontWeight: '600', marginTop: 2 },
   productStock: { ...typography.caption, color: colors.textSecondary },
+  deleteBtn: { paddingHorizontal: spacing.sm, paddingVertical: spacing.xs },
+  deleteText: { ...typography.caption, color: colors.error, fontWeight: '600' },
   empty: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.xl },
   emptyText: { ...typography.body, color: colors.textSecondary },
 })

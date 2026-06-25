@@ -44,4 +44,26 @@ export const adminService = {
 
   getUsers: (page?: number) =>
     api.get('/admin/users', { params: page ? { page } : {} }),
+
+  createUser: (data: { name: string; email: string; password: string; role?: string }) =>
+    api.post('/admin/users', data),
+
+  updateUser: (id: string, data: { name?: string; email?: string; role?: string; phone?: string }) =>
+    api.put(`/admin/users/${id}`, data),
+
+  deleteUser: (id: string) =>
+    api.delete(`/admin/users/${id}`),
+
+  updateBanner: (id: string, data: FormData) =>
+    api.put(`/admin/banners/${id}`, data, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+
+  updateCategory: (id: string, data: FormData) =>
+    api.put(`/admin/categories/${id}`, data, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+
+  deleteCategory: (id: string) =>
+    api.delete(`/admin/categories/${id}`),
 }

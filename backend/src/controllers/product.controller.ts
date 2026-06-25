@@ -137,7 +137,11 @@ export const getRelatedProducts = asyncHandler(async (req: Request, res: Respons
 })
 
 export const createProduct = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-  const product = await Product.create(req.body)
+  const data = { ...req.body }
+  if (req.files && Array.isArray(req.files)) {
+    data.images = (req.files as Express.Multer.File[]).map((f) => (f as any).path)
+  }
+  const product = await Product.create(data)
 
   res.status(201).json(new ApiResponse(201, 'Product created', product))
 })
@@ -148,7 +152,11 @@ export const updateProduct = asyncHandler(async (req: AuthenticatedRequest, res:
     throw new ApiError(404, 'Product not found')
   }
 
-  Object.assign(product, req.body)
+  const data = { ...req.body }
+  if (req.files && Array.isArray(req.files)) {
+    data.images = (req.files as Express.Multer.File[]).map((f) => (f as any).path)
+  }
+  Object.assign(product, data)
   await product.save()
 
   res.json(new ApiResponse(200, 'Product updated', product))
