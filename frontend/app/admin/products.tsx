@@ -1,0 +1,94 @@
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useRouter } from 'expo-router'
+import { useQuery } from '@tanstack/react-query'
+import { Image } from 'expo-image'
+import { useState } from 'react'
+import { colors } from '../../constants/colors'
+import { spacing, borderRadius } from '../../constants/spacing'
+import { typography } from '../../constants/typography'
+import { adminService } from '../../services/adminService'
+import { formatPrice } from '../../utils/formatPrice'
+
+export default function AdminProducts() {
+  const insets = useSafeAreaInsets()
+  const router = useRouter()
+  const [page, setPage] = useState(1)
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['admin', 'products', page],
+    queryFn: () => adminService.getProducts(page),
+  })
+
+  const products = data?.data?.data || []
+  const pagination = data?.data?.pagination
+
+  return (
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Text style={styles.back}>← Back</Text>
+        </TouchableOpacity>
+        <Text style={styles.title}>Products</Text>
+        <TouchableOpacity>
+          <Text style={styles.add}>+ Add</Text>
+        </TouchableOpacity>
+      </View>
+
+      {isLoading ? (
+        <View style={styles.loading}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      ) : (
+        <FlatList
+          data={products}
+          keyExtractor={(item) => item._id}
+          contentContainerStyle={styles.list}
+          renderItem={({ item }) => (
+            <View style={styles.productRow}>
+              <Image
+                source={{ uri: item.images?.[0] }}
+                style={styles.productImage}
+                contentFit="cover"
+              />
+              <View style={styles.productInfo}>
+                <Text style={styles.productName} numberOfLines={1}>{item.name}</Text>
+                <Text style={styles.productPrice}>{formatPrice(item.price)}</Text>
+                <Text style={styles.productStock}>Stock: {item.stock}</Text>
+              </View>
+            </View>
+          )}
+          ListEmptyComponent={
+            <View style={styles.empty}>
+              <Text style={styles.emptyText}>No products found</Text>
+            </View>
+          }
+        />
+      )}
+    </View>
+  )
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.secondaryBg },
+  header: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: spacing.md, paddingVertical: spacing.sm, backgroundColor: colors.background,
+  },
+  back: { ...typography.body, color: colors.primary, fontWeight: '600' },
+  title: { ...typography.heading, color: colors.textPrimary },
+  add: { ...typography.body, color: colors.primary, fontWeight: '600' },
+  loading: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  list: { padding: spacing.md },
+  productRow: {
+    flexDirection: 'row', backgroundColor: colors.background, padding: spacing.md,
+    borderRadius: borderRadius.card, marginBottom: spacing.sm, alignItems: 'center',
+  },
+  productImage: { width: 56, height: 56, borderRadius: 8, backgroundColor: colors.secondaryBg, marginRight: spacing.md },
+  productInfo: { flex: 1 },
+  productName: { ...typography.body, color: colors.textPrimary, fontWeight: '600' },
+  productPrice: { ...typography.caption, color: colors.primary, fontWeight: '600', marginTop: 2 },
+  productStock: { ...typography.caption, color: colors.textSecondary },
+  empty: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.xl },
+  emptyText: { ...typography.body, color: colors.textSecondary },
+})

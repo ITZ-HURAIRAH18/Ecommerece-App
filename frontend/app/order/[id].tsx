@@ -1,51 +1,52 @@
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native'
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native'
 import { Image } from 'expo-image'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useQuery } from '@tanstack/react-query'
 import { colors } from '../../constants/colors'
 import { spacing, borderRadius } from '../../constants/spacing'
 import { typography } from '../../constants/typography'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
+import { ErrorState } from '../../components/common/ErrorState'
+import { EmptyState } from '../../components/common/EmptyState'
 import { formatPrice } from '../../utils/formatPrice'
-
-const mockOrder = {
-  _id: '1',
-  orderNumber: 'ORD-1718000001',
-  orderStatus: 'shipped',
-  items: [
-    { name: 'Wireless Headphones', image: 'https://picsum.photos/seed/headphones/200', price: 79.99, quantity: 1 },
-    { name: 'Phone Case', image: 'https://picsum.photos/seed/phonecase/200', price: 19.99, quantity: 2 },
-  ],
-  shippingAddress: {
-    fullName: 'John Doe',
-    street: '123 Main St',
-    city: 'New York',
-    state: 'NY',
-    zip: '10001',
-    country: 'US',
-  },
-  paymentMethod: 'cod',
-  subtotal: 119.97,
-  shippingFee: 0,
-  discount: 10,
-  total: 109.97,
-  estimatedDelivery: '2024-06-28',
-  trackingNumber: '1Z999AA10123456784',
-  statusHistory: [
-    { status: 'placed', timestamp: '2024-06-20T10:00:00Z' },
-    { status: 'confirmed', timestamp: '2024-06-20T11:30:00Z' },
-    { status: 'shipped', timestamp: '2024-06-21T09:00:00Z' },
-  ],
-  createdAt: '2024-06-20T10:00:00Z',
-}
+import { orderService } from '../../services/orderService'
 
 export default function OrderDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const insets = useSafeAreaInsets()
   const router = useRouter()
 
-  const order = mockOrder
+  const { data: order, isLoading, error, refetch } = useQuery({
+    queryKey: ['order', id],
+    queryFn: () => orderService.getOrder(id as string),
+    enabled: !!id,
+  })
+
+  if (isLoading) {
+    return (
+      <View style={[styles.container, { paddingTop: insets.top, justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    )
+  }
+
+  if (error) {
+    return (
+      <View style={[styles.container, { paddingTop: insets.top }]}>
+        <ErrorState message="Could not load order details" onRetry={refetch} />
+      </View>
+    )
+  }
+
+  if (!order) {
+    return (
+      <View style={[styles.container, { paddingTop: insets.top }]}>
+        <EmptyState icon="📦" title="Order not found" />
+      </View>
+    )
+  }
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -78,7 +79,7 @@ export default function OrderDetailScreen() {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Timeline</Text>
-          {order.statusHistory.map((entry, i) => (
+          {order.statusHistory.map((entry: { status: string; timestamp: string; note?: string }, i: number) => (
             <View key={i} style={styles.timelineItem}>
               <View
                 style={[
@@ -89,7 +90,7 @@ export default function OrderDetailScreen() {
               {i < order.statusHistory.length - 1 && <View style={styles.timelineLine} />}
               <View style={styles.timelineContent}>
                 <Text style={styles.timelineStatus}>
-                  {entry.status.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
+                  {entry.status.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
                 </Text>
                 <Text style={styles.timelineDate}>
                   {new Date(entry.timestamp).toLocaleString()}
@@ -101,7 +102,7 @@ export default function OrderDetailScreen() {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Items</Text>
-          {order.items.map((item, i) => (
+          {order.items.map((item: { name: string; image: string; price: number; quantity: number }, i: number) => (
             <View key={i} style={styles.itemRow}>
               <Image source={{ uri: item.image }} style={styles.itemImage} contentFit="cover" />
               <View style={styles.itemInfo}>

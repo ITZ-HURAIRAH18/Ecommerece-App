@@ -1,4 +1,5 @@
 import { Response } from 'express'
+import mongoose from 'mongoose'
 import { asyncHandler } from '../utils/asyncHandler'
 import { ApiResponse } from '../utils/ApiResponse'
 import { ApiError } from '../utils/ApiError'
@@ -70,7 +71,13 @@ export const getOrders = asyncHandler(async (req: AuthenticatedRequest, res: Res
 export const getOrder = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
   const userId = req.user!._id
 
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    throw new ApiError(404, 'Order not found')
+  }
+
   const order = await Order.findOne({ _id: req.params.id, user: userId })
+    .populate('user', 'name email')
+    .populate('items.product', 'name images price')
   if (!order) {
     throw new ApiError(404, 'Order not found')
   }
@@ -80,6 +87,10 @@ export const getOrder = asyncHandler(async (req: AuthenticatedRequest, res: Resp
 
 export const cancelOrder = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
   const userId = req.user!._id
+
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    throw new ApiError(404, 'Order not found')
+  }
 
   const order = await Order.findOne({ _id: req.params.id, user: userId })
   if (!order) {

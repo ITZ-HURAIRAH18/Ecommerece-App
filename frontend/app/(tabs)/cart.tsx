@@ -39,7 +39,10 @@ export default function CartScreen() {
       <Text style={styles.title}>Cart ({items.length})</Text>
       <FlatList
         data={items}
-        keyExtractor={(item) => item.product.toString()}
+        keyExtractor={(item) => {
+          const id = typeof item.product === 'object' ? item.product._id : item.product
+          return String(id)
+        }}
         renderItem={({ item }) => (
           <CartItem
             item={item}

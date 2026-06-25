@@ -26,6 +26,9 @@ export const errorHandler = (
     message = 'Duplicate field value'
     const keyValue = (err as any).keyValue
     errors = keyValue ? Object.keys(keyValue).map((key) => `${key}: ${keyValue[key]} already exists`) : undefined
+  } else if (err.name === 'CastError') {
+    statusCode = 400
+    message = `Invalid ${(err as any).path}: ${(err as any).value}`
   } else if (err.name === 'JsonWebTokenError') {
     statusCode = 401
     message = 'Invalid token'

@@ -7,7 +7,7 @@ import { formatPrice } from '../../utils/formatPrice'
 
 interface CartItemProps {
   item: {
-    product: string
+    product: string | { _id: string }
     name: string
     image: string
     price: number
@@ -15,6 +15,10 @@ interface CartItemProps {
   }
   onUpdateQty: (productId: string, qty: number) => void
   onRemove: (productId: string) => void
+}
+
+function getProductId(product: string | { _id: string }): string {
+  return typeof product === 'object' ? product._id : product
 }
 
 export function CartItem({ item, onUpdateQty, onRemove }: CartItemProps) {
@@ -32,21 +36,21 @@ export function CartItem({ item, onUpdateQty, onRemove }: CartItemProps) {
         <Text style={styles.price}>{formatPrice(item.price)}</Text>
         <View style={styles.actions}>
           <View style={styles.stepper}>
-            <TouchableOpacity
-              style={styles.stepperBtn}
-              onPress={() => onUpdateQty(item.product, Math.max(1, item.quantity - 1))}
-            >
-              <Text style={styles.stepperText}>-</Text>
-            </TouchableOpacity>
-            <Text style={styles.qty}>{item.quantity}</Text>
-            <TouchableOpacity
-              style={styles.stepperBtn}
-              onPress={() => onUpdateQty(item.product, item.quantity + 1)}
-            >
-              <Text style={styles.stepperText}>+</Text>
-            </TouchableOpacity>
-          </View>
-          <TouchableOpacity onPress={() => onRemove(item.product)}>
+              <TouchableOpacity
+                style={styles.stepperBtn}
+                onPress={() => onUpdateQty(getProductId(item.product), Math.max(1, item.quantity - 1))}
+              >
+                <Text style={styles.stepperText}>-</Text>
+              </TouchableOpacity>
+              <Text style={styles.qty}>{item.quantity}</Text>
+              <TouchableOpacity
+                style={styles.stepperBtn}
+                onPress={() => onUpdateQty(getProductId(item.product), item.quantity + 1)}
+              >
+                <Text style={styles.stepperText}>+</Text>
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity onPress={() => onRemove(getProductId(item.product))}>
             <Text style={styles.remove}>Remove</Text>
           </TouchableOpacity>
         </View>

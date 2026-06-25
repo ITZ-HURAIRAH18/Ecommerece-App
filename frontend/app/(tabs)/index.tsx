@@ -2,6 +2,7 @@ import { View, ScrollView, RefreshControl, StyleSheet } from 'react-native'
 import { useState, useCallback } from 'react'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
+import { useQuery } from '@tanstack/react-query'
 import { colors } from '../../constants/colors'
 import { spacing } from '../../constants/spacing'
 import { HeroBanner } from '../../components/home/HeroBanner'
@@ -10,20 +11,12 @@ import { SectionHeader } from '../../components/home/SectionHeader'
 import { ProductGrid } from '../../components/product/ProductGrid'
 import { ProductCarousel } from '../../components/product/ProductCarousel'
 import { useFeaturedProducts, useNewArrivals } from '../../hooks/useProducts'
+import { categoryService } from '../../services/categoryService'
 
 const mockBanners = [
   { _id: '1', image: 'https://picsum.photos/seed/banner1/800/400', title: 'Summer Sale - Up to 50% Off' },
-  { _id: '2', image: 'https://picsum.photos/seed/banner2/800/400', title: 'New Collection 2024' },
+  { _id: '2', image: 'https://picsum.photos/seed/banner2/800/400', title: 'New Collection' },
   { _id: '3', image: 'https://picsum.photos/seed/banner3/800/400', title: 'Free Shipping on Orders $50+' },
-]
-
-const mockCategories = [
-  { _id: '1', name: 'Electronics', icon: '💻' },
-  { _id: '2', name: 'Fashion', icon: '👕' },
-  { _id: '3', name: 'Home', icon: '🏡' },
-  { _id: '4', name: 'Beauty', icon: '💄' },
-  { _id: '5', name: 'Sports', icon: '⚽' },
-  { _id: '6', name: 'Books', icon: '📚' },
 ]
 
 export default function HomeScreen() {
@@ -32,6 +25,11 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false)
   const { data: featuredData, isLoading: featuredLoading } = useFeaturedProducts()
   const { data: newArrivalsData, isLoading: newArrivalsLoading } = useNewArrivals()
+  const { data: categoriesData } = useQuery({
+    queryKey: ['categories'],
+    queryFn: categoryService.getAll,
+  })
+  const categories = categoriesData?.data?.data || []
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true)
@@ -50,7 +48,7 @@ export default function HomeScreen() {
 
         <SectionHeader title="Categories" actionLabel="See All" onAction={() => router.push('/(tabs)/categories')} />
         <CategoryScroll
-          categories={mockCategories}
+          categories={categories}
           onSelect={(cat) => router.push(`/(tabs)/search?category=${cat._id}`)}
         />
 

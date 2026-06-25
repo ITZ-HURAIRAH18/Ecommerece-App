@@ -35,6 +35,7 @@ function RootLayoutNav() {
       <Stack.Screen name="wishlist" options={{ presentation: 'card' }} />
       <Stack.Screen name="notifications" options={{ presentation: 'card' }} />
       <Stack.Screen name="settings" options={{ presentation: 'card' }} />
+      <Stack.Screen name="admin" options={{ presentation: 'card' }} />
     </Stack>
   )
 }

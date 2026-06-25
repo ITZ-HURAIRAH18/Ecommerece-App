@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Dimensions } from 'react-native'
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Dimensions, Platform } from 'react-native'
 import { Image } from 'expo-image'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -17,6 +17,7 @@ import { SkeletonLoader } from '../../components/common/SkeletonLoader'
 import { ErrorState } from '../../components/common/ErrorState'
 
 const { width } = Dimensions.get('window')
+const IMAGE_HEIGHT = width * 0.85
 
 export default function ProductDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
@@ -65,14 +66,27 @@ export default function ProductDetailScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.imageContainer}>
-          <Image
-            source={{ uri: product.images[selectedImage] }}
-            style={styles.mainImage}
-            contentFit="cover"
-            transition={300}
-          />
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 100 }}
+      >
+        <ScrollView
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          style={{ height: IMAGE_HEIGHT }}
+        >
+          {product.images.map((img: string, index: number) => (
+            <Image
+              key={index}
+              source={{ uri: img }}
+              style={{ width, height: IMAGE_HEIGHT }}
+              contentFit="cover"
+              transition={300}
+            />
+          ))}
+        </ScrollView>
+        <View style={styles.imageOverlay}>
           <TouchableOpacity
             style={styles.backBtn}
             onPress={() => router.back()}
@@ -192,7 +206,7 @@ export default function ProductDetailScreen() {
         </View>
       </ScrollView>
 
-      <View style={styles.bottomBar}>
+      <View style={[styles.bottomBar, { paddingBottom: Platform.OS === 'ios' ? 32 : 16 }]}>
         <Button
           title="Add to Cart"
           onPress={handleAddToCart}
@@ -217,10 +231,12 @@ const styles = StyleSheet.create({
   imageContainer: {
     position: 'relative',
   },
-  mainImage: {
-    width,
-    height: width,
-    backgroundColor: colors.secondaryBg,
+  imageOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
   backBtn: {
     position: 'absolute',
@@ -408,6 +424,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   bottomBar: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     flexDirection: 'row',
     padding: spacing.md,
     borderTopWidth: 1,

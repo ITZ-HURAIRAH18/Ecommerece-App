@@ -1,10 +1,12 @@
 import { Request, Response } from 'express'
+import mongoose from 'mongoose'
 import { asyncHandler } from '../utils/asyncHandler'
 import { ApiResponse } from '../utils/ApiResponse'
 import { ApiError } from '../utils/ApiError'
 import { paginate } from '../utils/paginate'
 import { AuthenticatedRequest, ProductFilterQuery } from '../types'
 import Product from '../models/Product'
+import Category from '../models/Category'
 
 export const getProducts = asyncHandler(async (req: Request, res: Response) => {
   const {
@@ -23,7 +25,18 @@ export const getProducts = asyncHandler(async (req: Request, res: Response) => {
   const filter: Record<string, unknown> = { isActive: true }
 
   if (category) {
-    filter.category = category
+    if (mongoose.Types.ObjectId.isValid(category)) {
+      filter.category = new mongoose.Types.ObjectId(category)
+    } else {
+      const cat = await Category.findOne({
+        $or: [{ slug: category }, { _id: category }]
+      })
+      if (cat) {
+        filter.category = cat._id
+      } else {
+        return res.json({ success: true, data: [], total: 0, page: 1 })
+      }
+    }
   }
 
   if (minPrice || maxPrice) {
@@ -77,6 +90,10 @@ export const getProducts = asyncHandler(async (req: Request, res: Response) => {
 })
 
 export const getProduct = asyncHandler(async (req: Request, res: Response) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    throw new ApiError(404, 'Product not found')
+  }
+
   const product = await Product.findById(req.params.id).populate('category')
 
   if (!product || !product.isActive) {

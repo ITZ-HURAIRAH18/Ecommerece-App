@@ -2,12 +2,14 @@ import { View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet, Activity
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useState, useEffect } from 'react'
 import { useLocalSearchParams } from 'expo-router'
+import { useQuery } from '@tanstack/react-query'
 import { colors } from '../../constants/colors'
 import { spacing, borderRadius } from '../../constants/spacing'
 import { typography } from '../../constants/typography'
 import { useSearch } from '../../hooks/useSearch'
 import { useProducts } from '../../hooks/useProducts'
 import { ProductCard } from '../../components/product/ProductCard'
+import { categoryService } from '../../services/categoryService'
 
 const trendingSearches = ['Wireless Headphones', 'Running Shoes', 'Smart Watch', 'Backpack', 'Sunglasses']
 
@@ -27,6 +29,14 @@ export default function SearchScreen() {
 
   const { data, isLoading } = useProducts(apiParams)
   const results = data?.data?.data || []
+
+  // Fetch categories to show name in header
+  const { data: categoriesData } = useQuery({
+    queryKey: ['categories'],
+    queryFn: categoryService.getAll,
+  })
+  const categories = categoriesData?.data?.data || []
+  const activeCategory = categories.find((c: { _id: string }) => c._id === params.category)
 
   // Auto-trigger search if a category parameter is present on mount
   useEffect(() => {
@@ -129,7 +139,9 @@ export default function SearchScreen() {
           contentContainerStyle={styles.results}
           ListEmptyComponent={
             <View style={styles.empty}>
-              <Text style={styles.emptyText}>No results found for "{activeQuery || 'this category'}"</Text>
+              <Text style={styles.emptyText}>
+                No results found{activeQuery ? ` for "${activeQuery}"` : activeCategory ? ` in "${activeCategory.name}"` : ''}
+              </Text>
             </View>
           }
         />

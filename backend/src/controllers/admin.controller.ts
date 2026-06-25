@@ -1,10 +1,13 @@
 import { Response } from 'express'
 import { asyncHandler } from '../utils/asyncHandler'
 import { ApiResponse } from '../utils/ApiResponse'
+import { ApiError } from '../utils/ApiError'
 import { AuthenticatedRequest } from '../types'
 import Order from '../models/Order'
 import User from '../models/User'
 import Product from '../models/Product'
+import Category from '../models/Category'
+import Banner from '../models/Banner'
 import Notification from '../models/Notification'
 import { sendPushNotification } from '../services/push.service'
 
@@ -118,4 +121,44 @@ export const getAllProducts = asyncHandler(async (req: AuthenticatedRequest, res
       pages: Math.ceil(total / limit),
     })
   )
+})
+
+export const getUsers = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+  const page = parseInt(req.query.page as string) || 1
+  const limit = parseInt(req.query.limit as string) || 20
+  const skip = (page - 1) * limit
+
+  const [users, total] = await Promise.all([
+    User.find().sort({ createdAt: -1 }).skip(skip).limit(limit).select('-password -refreshToken'),
+    User.countDocuments(),
+  ])
+
+  res.status(200).json(
+    new ApiResponse(200, 'Users fetched', users, {
+      page,
+      limit,
+      total,
+      pages: Math.ceil(total / limit),
+    })
+  )
+})
+
+export const getBanners = asyncHandler(async (_req: AuthenticatedRequest, res: Response) => {
+  const banners = await Banner.find({ isActive: true }).sort({ order: 1, createdAt: -1 })
+  res.status(200).json(new ApiResponse(200, 'Banners fetched', banners))
+})
+
+export const createBanner = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+  const { title, link, order } = req.body
+  const image = req.file ? (req.file as any).path : req.body.image
+  if (!image) throw new ApiError(400, 'Banner image is required')
+
+  const banner = await Banner.create({ image, title, link, order: order || 0 })
+  res.status(201).json(new ApiResponse(201, 'Banner created', banner))
+})
+
+export const deleteBanner = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+  const banner = await Banner.findByIdAndDelete(req.params.id)
+  if (!banner) throw new ApiError(404, 'Banner not found')
+  res.status(200).json(new ApiResponse(200, 'Banner deleted'))
 })

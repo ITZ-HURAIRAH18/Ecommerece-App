@@ -1,7 +1,6 @@
 import { View, Text, StyleSheet } from 'react-native'
-import { useRouter } from 'expo-router'
+import { useRouter, useLocalSearchParams } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useEffect } from 'react'
 import { colors } from '../../constants/colors'
 import { spacing } from '../../constants/spacing'
 import { typography } from '../../constants/typography'
@@ -10,6 +9,7 @@ import { Button } from '../../components/ui/Button'
 export default function SuccessScreen() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
+  const { orderId } = useLocalSearchParams<{ orderId?: string }>()
 
   const orderNumber = 'ORD-' + Date.now()
 
@@ -33,7 +33,7 @@ export default function SuccessScreen() {
       <View style={styles.bottom}>
         <Button
           title="Track Order"
-          onPress={() => router.push('/order/1')}
+          onPress={() => router.push(orderId ? `/order/${orderId}` : '/order')}
           style={styles.button}
         />
         <Button

@@ -1,11 +1,12 @@
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native'
-import { useRouter } from 'expo-router'
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from 'react-native'
+import { useRouter, useLocalSearchParams } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useState } from 'react'
 import { colors } from '../../constants/colors'
 import { spacing, borderRadius } from '../../constants/spacing'
 import { typography } from '../../constants/typography'
 import { Button } from '../../components/ui/Button'
+import { orderService } from '../../services/orderService'
 
 const paymentMethods = [
   { id: 'cod', label: 'Cash on Delivery', icon: '💵', description: 'Pay when you receive' },
@@ -16,10 +17,29 @@ const paymentMethods = [
 export default function PaymentScreen() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
+  const { address } = useLocalSearchParams<{ address: string }>()
   const [selected, setSelected] = useState('cod')
+  const [placing, setPlacing] = useState(false)
 
-  const handlePlaceOrder = () => {
-    router.push('/checkout/success')
+  const handlePlaceOrder = async () => {
+    if (!address) {
+      Alert.alert('Error', 'Shipping address is missing. Please go back and fill in your details.')
+      return
+    }
+    setPlacing(true)
+    try {
+      const shippingAddress = JSON.parse(address)
+      const { data } = await orderService.placeOrder({
+        shippingAddress,
+        paymentMethod: selected,
+      })
+      const orderId = data.data._id || data.data.order?._id
+      router.replace(`/checkout/success?orderId=${orderId}`)
+    } catch (err: any) {
+      Alert.alert('Order Failed', err?.response?.data?.message || 'Could not place order. Please try again.')
+    } finally {
+      setPlacing(false)
+    }
   }
 
   return (
@@ -62,7 +82,7 @@ export default function PaymentScreen() {
       </ScrollView>
 
       <View style={styles.bottom}>
-        <Button title="Place Order" onPress={handlePlaceOrder} size="lg" />
+        <Button title="Place Order" onPress={handlePlaceOrder} size="lg" loading={placing} disabled={placing} />
       </View>
     </View>
   )

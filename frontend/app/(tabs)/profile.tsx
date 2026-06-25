@@ -14,6 +14,7 @@ const menuItems = [
   { icon: '📍', label: 'Addresses', route: '/settings' },
   { icon: '💳', label: 'Payment Methods', route: '/settings' },
   { icon: '⚙️', label: 'Settings', route: '/settings' },
+  { icon: '🔐', label: 'Admin Panel', route: '/admin', adminOnly: true },
 ]
 
 export default function ProfileScreen() {
@@ -40,7 +41,9 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.menu}>
-          {menuItems.map((item, i) => (
+          {menuItems
+            .filter((item) => !item.adminOnly || user?.role === 'admin')
+            .map((item, i) => (
             <TouchableOpacity
               key={i}
               style={styles.menuItem}

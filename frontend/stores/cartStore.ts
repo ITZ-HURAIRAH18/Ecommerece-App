@@ -2,7 +2,16 @@ import { create } from 'zustand'
 import { cartService } from '../services/cartService'
 
 interface CartItem {
-  product: string
+  product: string | { _id: string }
+  name: string
+  image: string
+  price: number
+  quantity: number
+  selectedVariants?: Record<string, string>
+}
+
+interface PopulatedCartItem {
+  product: { _id: string; name?: string; images?: string[]; price?: number }
   name: string
   image: string
   price: number
@@ -62,7 +71,12 @@ export const useCartStore = create<CartStore>((set, get) => ({
 
   removeItem: async (productId) => {
     const prevItems = get().items
-    set({ items: prevItems.filter((i) => i.product !== productId) })
+    set({
+      items: prevItems.filter((item) => {
+        const id = typeof item.product === 'object' ? item.product._id.toString() : item.product.toString()
+        return id !== productId.toString()
+      })
+    })
     try {
       await cartService.removeItem(productId)
       const { data } = await cartService.getCart()
@@ -80,9 +94,10 @@ export const useCartStore = create<CartStore>((set, get) => ({
   updateQty: async (productId, quantity) => {
     const prevItems = get().items
     set({
-      items: get().items.map((i) =>
-        i.product === productId ? { ...i, quantity } : i
-      ),
+      items: get().items.map((i) => {
+        const id = typeof i.product === 'object' ? i.product._id.toString() : i.product.toString()
+        return id === productId.toString() ? { ...i, quantity } : i
+      }),
     })
     try {
       await cartService.updateItem(productId, quantity)

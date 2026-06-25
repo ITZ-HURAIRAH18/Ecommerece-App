@@ -9,6 +9,7 @@ import orderRoutes from './routes/order.routes'
 import reviewRoutes from './routes/review.routes'
 import wishlistRoutes from './routes/wishlist.routes'
 import searchRoutes from './routes/search.routes'
+import notificationRoutes from './routes/notification.routes'
 import adminRoutes from './routes/admin.routes'
 import { errorHandler } from './middleware/errorHandler'
 
@@ -31,6 +32,7 @@ app.use('/api/orders', orderRoutes)
 app.use('/api/reviews', reviewRoutes)
 app.use('/api/wishlist', wishlistRoutes)
 app.use('/api/search', searchRoutes)
+app.use('/api/notifications', notificationRoutes)
 app.use('/api/admin', adminRoutes)
 
 app.use((_req, res) => {

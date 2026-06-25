@@ -1,20 +1,22 @@
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native'
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
+import { useQuery } from '@tanstack/react-query'
 import { colors } from '../constants/colors'
 import { spacing, borderRadius } from '../constants/spacing'
 import { typography } from '../constants/typography'
 import { EmptyState } from '../components/common/EmptyState'
-
-const mockNotifications = [
-  { _id: '1', title: 'Order Shipped', body: 'Your order ORD-1718000001 has been shipped.', type: 'order', isRead: false, createdAt: '2024-06-21T09:00:00Z' },
-  { _id: '2', title: 'Flash Sale!', body: 'Up to 50% off on electronics. Hurry!', type: 'promotion', isRead: true, createdAt: '2024-06-20T12:00:00Z' },
-  { _id: '3', title: 'Price Drop', body: 'The item in your wishlist is now 20% cheaper!', type: 'system', isRead: false, createdAt: '2024-06-19T15:30:00Z' },
-]
+import { notificationService } from '../services/notificationService'
 
 export default function NotificationsScreen() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['notifications'],
+    queryFn: notificationService.getNotifications,
+  })
+  const notifications = data?.data?.data || []
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -26,11 +28,15 @@ export default function NotificationsScreen() {
         <View style={{ width: 50 }} />
       </View>
 
-      {mockNotifications.length === 0 ? (
+      {isLoading ? (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      ) : notifications.length === 0 ? (
         <EmptyState icon="🔔" title="No notifications yet" message="We'll notify you when something happens" />
       ) : (
         <FlatList
-          data={mockNotifications}
+          data={notifications}
           keyExtractor={(item) => item._id}
           renderItem={({ item }) => (
             <TouchableOpacity

@@ -29,7 +29,8 @@ export default function CheckoutScreen() {
 
   const handleContinue = () => {
     if (!fullName || !phone || !street || !city || !state || !zip) return
-    router.push('/checkout/payment')
+    const address = JSON.stringify({ fullName, phone, street, city, state, zip })
+    router.push(`/checkout/payment?address=${encodeURIComponent(address)}`)
   }
 
   return (
