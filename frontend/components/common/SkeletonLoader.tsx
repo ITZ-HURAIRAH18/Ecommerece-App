@@ -1,61 +1,44 @@
-import { View, Animated, StyleSheet, ViewStyle } from 'react-native'
-import { useEffect, useRef } from 'react'
-import { colors } from '../../constants/colors'
-import { borderRadius } from '../../constants/spacing'
+import React, { useEffect } from 'react'
+import { View, StyleSheet } from 'react-native'
+import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing } from 'react-native-reanimated'
+import { Colors, Radius } from '../../constants/tokens'
 
 interface SkeletonLoaderProps {
   width?: number | string
   height?: number
-  borderRadiusVal?: number
-  style?: ViewStyle
+  borderRadius?: number
 }
 
-export function SkeletonLoader({
-  width = '100%',
-  height = 20,
-  borderRadiusVal = borderRadius.card,
-  style,
-}: SkeletonLoaderProps) {
-  const opacity = useRef(new Animated.Value(0.3))
+export function SkeletonLoader({ width = '100%', height = 20, borderRadius = Radius.sm }: SkeletonLoaderProps) {
+  const opacity = useSharedValue(0.3)
 
   useEffect(() => {
-    const animation = Animated.loop(
-      Animated.sequence([
-        Animated.timing(opacity.current, {
-          toValue: 1,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-        Animated.timing(opacity.current, {
-          toValue: 0.3,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-      ])
+    opacity.value = withRepeat(
+      withTiming(0.7, { duration: 800, easing: Easing.inOut(Easing.ease) }),
+      -1,
+      true
     )
-    animation.start()
-    return () => animation.stop()
   }, [])
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+  }))
 
   return (
     <Animated.View
-      style={[
-        styles.skeleton,
-        { width: width as any, height, borderRadius: borderRadiusVal, opacity: opacity.current },
-        style,
-      ]}
+      style={[styles.skeleton, { width: width as any, height, borderRadius }, animatedStyle]}
     />
   )
 }
 
 export function ProductCardSkeleton() {
   return (
-    <View style={styles.card}>
-      <SkeletonLoader height={180} />
-      <View style={styles.padding}>
-        <SkeletonLoader height={16} width="80%" style={{ marginBottom: 8 }} />
-        <SkeletonLoader height={14} width="60%" style={{ marginBottom: 8 }} />
-        <SkeletonLoader height={18} width="40%" />
+    <View style={styles.productCard}>
+      <SkeletonLoader height={180} borderRadius={Radius.md} />
+      <View style={{ padding: 10 }}>
+        <SkeletonLoader height={14} width="80%" />
+        <View style={{ height: 8 }} />
+        <SkeletonLoader height={14} width="40%" />
       </View>
     </View>
   )
@@ -63,15 +46,11 @@ export function ProductCardSkeleton() {
 
 const styles = StyleSheet.create({
   skeleton: {
-    backgroundColor: colors.border,
+    backgroundColor: Colors.gray100,
   },
-  card: {
-    backgroundColor: colors.background,
-    borderRadius: borderRadius.card,
+  productCard: {
+    backgroundColor: Colors.white,
+    borderRadius: Radius.md,
     overflow: 'hidden',
-    marginBottom: 8,
-  },
-  padding: {
-    padding: 12,
   },
 })

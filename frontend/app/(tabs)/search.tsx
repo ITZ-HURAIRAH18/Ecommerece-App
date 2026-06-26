@@ -1,141 +1,155 @@
-import { View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useState, useEffect } from 'react'
-import { useLocalSearchParams } from 'expo-router'
-import { useQuery } from '@tanstack/react-query'
-import { colors } from '../../constants/colors'
-import { spacing, borderRadius } from '../../constants/spacing'
-import { typography } from '../../constants/typography'
-import { useSearch } from '../../hooks/useSearch'
-import { useProducts } from '../../hooks/useProducts'
-import { ProductCard } from '../../components/product/ProductCard'
-import { categoryService } from '../../services/categoryService'
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, Pressable } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useQuery } from '@tanstack/react-query';
+import { Feather } from '@expo/vector-icons';
+import { Colors, Spacing, Typography, Radius } from '../../constants/tokens';
+import { useSearch } from '../../hooks/useSearch';
+import { useProducts } from '../../hooks/useProducts';
+import { ProductCard, Product } from '../../components/ProductCard';
+import { categoryService } from '../../services/categoryService';
 
-const trendingSearches = ['Wireless Headphones', 'Running Shoes', 'Smart Watch', 'Backpack', 'Sunglasses']
+const trendingSearches = ['Wireless Headphones', 'Running Shoes', 'Smart Watch', 'Backpack', 'Sunglasses'];
 
 export default function SearchScreen() {
-  const insets = useSafeAreaInsets()
-  const params = useLocalSearchParams()
-  const { query, setQuery, submitSearch, recentSearches, clearRecent } = useSearch()
+  const insets = useSafeAreaInsets();
+  const params = useLocalSearchParams();
+  const router = useRouter();
+  const { query, setQuery, submitSearch, recentSearches, clearRecent } = useSearch();
   
-  // Track the actual search value sent to the API
-  const [activeQuery, setActiveQuery] = useState('')
-  const [searched, setSearched] = useState(false)
+  const [activeQuery, setActiveQuery] = useState('');
+  const [searched, setSearched] = useState(false);
 
-  // Fetch products based on category param and search query
-  const apiParams: Record<string, string> = {}
-  if (params.category) apiParams.category = params.category as string
-  if (activeQuery) apiParams.q = activeQuery
+  const apiParams: Record<string, string> = {};
+  if (params.category) apiParams.category = params.category as string;
+  if (activeQuery) apiParams.q = activeQuery;
 
-  const { data, isLoading } = useProducts(apiParams)
-  const results = data?.data?.data || []
+  const { data, isLoading } = useProducts(apiParams);
+  const results = data?.data?.data || [];
 
-  // Fetch categories to show name in header
   const { data: categoriesData } = useQuery({
     queryKey: ['categories'],
     queryFn: categoryService.getAll,
-  })
-  const categories = categoriesData?.data?.data || []
-  const activeCategory = categories.find((c: { _id: string }) => c._id === params.category)
+  });
+  const categories = categoriesData?.data?.data || [];
+  const activeCategory = categories.find((c: { _id: string }) => c._id === params.category);
 
-  // Auto-trigger search if a category parameter is present on mount
   useEffect(() => {
     if (params.category) {
-      setSearched(true)
+      setSearched(true);
     }
-  }, [params.category])
+  }, [params.category]);
 
   const handleSearch = (q: string) => {
     if (q.trim()) {
-      submitSearch(q)
+      submitSearch(q);
     }
-    setActiveQuery(q)
-    setSearched(true)
-  }
+    setActiveQuery(q);
+    setSearched(true);
+  };
 
-  const isSearching = query.length > 0 || params.category
+  const isSearching = query.length > 0 || params.category;
+
+  const renderRecentSearch = ({ item }: { item: string }) => (
+    <Pressable
+      style={styles.recentChip}
+      onPress={() => {
+        setQuery(item);
+        handleSearch(item);
+      }}
+    >
+      <Text style={styles.recentText}>{item}</Text>
+    </Pressable>
+  );
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.searchBar}>
-        <TextInput
-          value={query}
-          onChangeText={setQuery}
-          placeholder="Search products..."
-          placeholderTextColor={colors.textSecondary}
-          style={styles.input}
-          autoFocus={!params.category}
-          returnKeyType="search"
-          onSubmitEditing={() => handleSearch(query)}
-        />
-        {query.length > 0 && (
-          <TouchableOpacity onPress={() => {
-            setQuery('')
-            setActiveQuery('')
-            if (!params.category) setSearched(false)
-          }}>
-            <Text style={styles.clear}>✕</Text>
-          </TouchableOpacity>
-        )}
+      {/* HEADER */}
+      <View style={styles.header}>
+        <Pressable style={styles.backBtn} onPress={() => router.back()}>
+          <Feather name="chevron-left" size={24} color={Colors.black} />
+        </Pressable>
+        <View style={styles.searchContainer}>
+          <TextInput
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Search products..."
+            placeholderTextColor={Colors.gray500}
+            style={styles.searchInput}
+            autoFocus={!params.category}
+            returnKeyType="search"
+            onSubmitEditing={() => handleSearch(query)}
+          />
+          <Pressable onPress={() => {
+            if (query.length > 0) {
+              setQuery('');
+              setActiveQuery('');
+              if (!params.category) setSearched(false);
+            } else {
+              handleSearch(query);
+            }
+          }} style={styles.searchIcon}>
+            <Feather name={query.length > 0 ? "x" : "search"} size={20} color={Colors.gray500} />
+          </Pressable>
+        </View>
       </View>
 
       {!isSearching && !searched && (
-        <>
+        <View style={styles.suggestionsContainer}>
           {recentSearches.length > 0 && (
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Recent</Text>
+                <Text style={styles.sectionTitle}>Recent Searches</Text>
                 <TouchableOpacity onPress={clearRecent}>
                   <Text style={styles.clearAll}>Clear</Text>
                 </TouchableOpacity>
               </View>
-              {recentSearches.map((s, i) => (
-                <TouchableOpacity
-                  key={i}
-                  style={styles.recentItem}
-                  onPress={() => {
-                    setQuery(s)
-                    handleSearch(s)
-                  }}
-                >
-                  <Text style={styles.recentText}>🕐 {s}</Text>
-                </TouchableOpacity>
-              ))}
+              <View style={styles.chipsRow}>
+                {recentSearches.map((s, i) => (
+                  <View key={i}>{renderRecentSearch({ item: s })}</View>
+                ))}
+              </View>
             </View>
           )}
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Trending</Text>
-            <View style={styles.trendingList}>
+            <View style={styles.chipsRow}>
               {trendingSearches.map((s, i) => (
-                <TouchableOpacity
-                  key={i}
-                  style={styles.trendingChip}
-                  onPress={() => {
-                    setQuery(s)
-                    handleSearch(s)
-                  }}
-                >
-                  <Text style={styles.trendingText}>🔥 {s}</Text>
-                </TouchableOpacity>
+                <View key={i}>{renderRecentSearch({ item: s })}</View>
               ))}
             </View>
           </View>
-        </>
+        </View>
       )}
 
       {searched && isLoading && (
         <View style={styles.empty}>
-          <ActivityIndicator size="large" color={colors.primary} />
+          <ActivityIndicator size="large" color={Colors.primary} />
         </View>
       )}
 
       {searched && !isLoading && (
         <FlatList
           data={results}
-          numColumns={2}
           keyExtractor={(item) => item._id}
-          renderItem={({ item }) => <ProductCard product={item} />}
+          renderItem={({ item }) => (
+            <ProductCard 
+              mode="horizontal"
+              product={{
+                id: item._id,
+                name: item.name,
+                price: item.price,
+                oldPrice: item.price * 1.2,
+                image: item.images[0]?.url || 'https://via.placeholder.com/150',
+                category: item.category?.name?.replace(/[^a-zA-Z ]/g, '') || 'Category',
+                rating: item.ratings || 4.5,
+                reviews: item.numOfReviews || 12,
+              }}
+              onPress={() => router.push(`/product/${item._id}`)}
+            />
+          )}
           contentContainerStyle={styles.results}
           ListEmptyComponent={
             <View style={styles.empty}>
@@ -147,87 +161,96 @@ export default function SearchScreen() {
         />
       )}
     </View>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: Colors.white,
   },
-  searchBar: {
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.secondaryBg,
-    margin: spacing.md,
-    borderRadius: borderRadius.card,
-    paddingHorizontal: spacing.md,
-    height: 44,
+    paddingHorizontal: Spacing.screenH,
+    paddingVertical: 12,
   },
-  input: {
+  backBtn: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+  },
+  searchContainer: {
     flex: 1,
-    ...typography.body,
-    color: colors.textPrimary,
+    height: 56,
+    backgroundColor: Colors.gray100,
+    borderRadius: Radius.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
   },
-  clear: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    padding: 4,
+  searchInput: {
+    flex: 1,
+    fontFamily: 'GeneralSans-Regular',
+    fontSize: 15,
+    color: Colors.black,
+  },
+  searchIcon: {
+    marginLeft: 8,
+  },
+  suggestionsContainer: {
+    paddingHorizontal: Spacing.screenH,
+    marginTop: 16,
   },
   section: {
-    paddingHorizontal: spacing.md,
-    marginBottom: spacing.lg,
+    marginBottom: 24,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.sm,
+    marginBottom: 12,
   },
   sectionTitle: {
-    ...typography.heading,
-    color: colors.textPrimary,
-    marginBottom: spacing.sm,
+    fontFamily: 'GeneralSans-Medium',
+    fontSize: 15,
+    color: Colors.gray700,
   },
   clearAll: {
-    ...typography.body,
-    color: colors.primary,
+    fontFamily: 'GeneralSans-Medium',
+    fontSize: 13,
+    color: Colors.primary,
   },
-  recentItem: {
-    paddingVertical: spacing.sm,
-  },
-  recentText: {
-    ...typography.body,
-    color: colors.textPrimary,
-  },
-  trendingList: {
+  chipsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    gap: 8,
   },
-  trendingChip: {
-    backgroundColor: colors.secondaryBg,
-    borderRadius: borderRadius.pill,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    marginRight: spacing.sm,
-    marginBottom: spacing.sm,
+  recentChip: {
+    backgroundColor: Colors.gray100,
+    borderRadius: Radius.full,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
   },
-  trendingText: {
-    ...typography.body,
-    color: colors.textPrimary,
+  recentText: {
+    fontFamily: 'GeneralSans-Regular',
+    fontSize: 14,
+    color: Colors.black,
   },
   results: {
-    padding: spacing.sm,
+    padding: Spacing.screenH,
   },
   empty: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: spacing.xl,
+    padding: 32,
   },
   emptyText: {
-    ...typography.body,
-    color: colors.textSecondary,
+    fontFamily: 'GeneralSans-Regular',
+    fontSize: 15,
+    color: Colors.gray500,
     textAlign: 'center',
   },
-})
+});

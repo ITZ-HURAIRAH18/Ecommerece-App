@@ -1,84 +1,131 @@
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useRouter } from 'expo-router'
-import { useQuery } from '@tanstack/react-query'
-import { colors } from '../../constants/colors'
-import { spacing, borderRadius } from '../../constants/spacing'
-import { typography } from '../../constants/typography'
-import { categoryService } from '../../services/categoryService'
+import React from 'react';
+import { View, Text, StyleSheet, ScrollView, Pressable, Dimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
+import { Feather } from '@expo/vector-icons';
+import { useQuery } from '@tanstack/react-query';
+import { Colors, Spacing, Typography, Radius, Shadow } from '../../constants/tokens';
+import { categoryService } from '../../services/categoryService';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+const { width } = Dimensions.get('window');
+const CARD_WIDTH = (width - (Spacing.screenH * 2) - 16) / 2;
+
+function CategoryCard({ category, onPress }: { category: any, onPress: () => void }) {
+  const scale = useSharedValue(1);
+
+  const handlePressIn = () => {
+    scale.value = withSpring(0.95, { damping: 15, stiffness: 300 });
+  };
+
+  const handlePressOut = () => {
+    scale.value = withSpring(1, { damping: 15, stiffness: 300 });
+  };
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  // Clean the name of emojis
+  const cleanName = category.name.replace(/[^a-zA-Z ]/g, '').trim();
+
+  return (
+    <AnimatedPressable
+      style={[styles.card, animatedStyle]}
+      onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+    >
+      <Text style={styles.cardTitle}>{cleanName}</Text>
+    </AnimatedPressable>
+  );
+}
 
 export default function CategoriesScreen() {
-  const insets = useSafeAreaInsets()
-  const router = useRouter()
-  const { data, isLoading } = useQuery({
+  const insets = useSafeAreaInsets();
+  const router = useRouter();
+
+  const { data: categoriesData } = useQuery({
     queryKey: ['categories'],
     queryFn: categoryService.getAll,
-  })
-  const categories = data?.data?.data || []
+  });
+
+  const categories = categoriesData?.data?.data || [];
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <Text style={styles.title}>Categories</Text>
-      {isLoading ? (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <ActivityIndicator size="large" color={colors.primary} />
+      {/* HEADER */}
+      <View style={styles.header}>
+        <View style={styles.headerSpacer} />
+        <Text style={styles.headerTitle}>Categories</Text>
+        <Pressable style={styles.searchBtn} onPress={() => router.push('/(tabs)/search')}>
+          <Feather name="search" size={24} color={Colors.black} />
+        </Pressable>
+      </View>
+
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.grid}>
+          {categories.map((cat: any) => (
+            <CategoryCard
+              key={cat._id}
+              category={cat}
+              onPress={() => router.push(`/(tabs)/search?category=${cat._id}`)}
+            />
+          ))}
         </View>
-      ) : (
-        <FlatList
-          data={categories}
-          numColumns={2}
-          keyExtractor={(item) => item._id}
-          contentContainerStyle={styles.list}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={styles.card}
-              activeOpacity={0.8}
-              onPress={() => router.push(`/(tabs)/search?category=${item._id}`)}
-            >
-              <Text style={styles.icon}>{item.icon || '📁'}</Text>
-              <Text style={styles.name}>{item.name}</Text>
-            </TouchableOpacity>
-          )}
-        />
-      )}
+      </ScrollView>
     </View>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: Colors.gray100, // Background gray100 as per design
   },
-  title: {
-    ...typography.display,
-    color: colors.textPrimary,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.screenH,
+    paddingVertical: 16,
+    backgroundColor: Colors.gray100,
   },
-  list: {
-    padding: spacing.sm,
+  headerSpacer: {
+    width: 24,
   },
-  card: {
-    flex: 1,
-    backgroundColor: colors.secondaryBg,
-    borderRadius: borderRadius.card,
-    padding: spacing.md,
-    margin: spacing.xs,
+  headerTitle: {
+    ...(Typography.h1 as any),
+  },
+  searchBtn: {
+    width: 24,
+    height: 24,
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  icon: {
-    fontSize: 36,
-    marginBottom: spacing.sm,
+  scrollContent: {
+    paddingHorizontal: Spacing.screenH,
+    paddingTop: 16,
+    paddingBottom: 40,
   },
-  name: {
-    ...typography.body,
-    color: colors.textPrimary,
-    fontWeight: '600',
-    marginBottom: 2,
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
   },
-  count: {
-    ...typography.caption,
-    color: colors.textSecondary,
+  card: {
+    width: CARD_WIDTH,
+    height: 80,
+    backgroundColor: Colors.white,
+    borderRadius: Radius.md,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+    ...Shadow.card,
   },
-})
+  cardTitle: {
+    ...(Typography.h2 as any),
+  },
+});

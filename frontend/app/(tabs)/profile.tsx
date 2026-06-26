@@ -1,140 +1,150 @@
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useRouter } from 'expo-router'
-import { colors } from '../../constants/colors'
-import { spacing, borderRadius } from '../../constants/spacing'
-import { typography } from '../../constants/typography'
-import { Avatar } from '../../components/ui/Avatar'
-import { useAuthStore } from '../../stores/authStore'
-
-const menuItems = [
-  { icon: '📦', label: 'My Orders', route: '/order' },
-  { icon: '❤️', label: 'Wishlist', route: '/wishlist' },
-  { icon: '🔔', label: 'Notifications', route: '/notifications' },
-  { icon: '📍', label: 'Addresses', route: '/settings' },
-  { icon: '💳', label: 'Payment Methods', route: '/settings' },
-  { icon: '⚙️', label: 'Settings', route: '/settings' },
-  { icon: '🔐', label: 'Admin Panel', route: '/admin', adminOnly: true },
-]
+import React from 'react';
+import { View, Text, StyleSheet, ScrollView, Pressable, Alert } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
+import { Feather } from '@expo/vector-icons';
+import { Colors, Spacing, Typography, Radius } from '../../constants/tokens';
+import { useAuthStore } from '../../stores/authStore';
 
 export default function ProfileScreen() {
-  const insets = useSafeAreaInsets()
-  const router = useRouter()
-  const { user, logout } = useAuthStore()
+  const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const { user, logout } = useAuthStore();
 
-  const handleAuthAction = async () => {
-    if (user) {
-      await logout()
-      router.replace('/(auth)/login')
-    } else {
-      router.push('/(auth)/login')
-    }
-  }
+  const handleLogout = () => {
+    Alert.alert(
+      "Log Out",
+      "Are you sure you want to log out?",
+      [
+        { text: "Cancel", style: "cancel" },
+        { 
+          text: "Log Out", 
+          style: "destructive",
+          onPress: async () => {
+            await logout();
+            router.replace('/(auth)/login');
+          }
+        }
+      ]
+    );
+  };
+
+  const menuItems = [
+    { icon: 'shopping-bag', title: 'My Orders', route: '/order' },
+    { icon: 'heart', title: 'Wishlist', route: '/wishlist' },
+    { icon: 'credit-card', title: 'Payment Methods', route: '/settings' },
+    { icon: 'map-pin', title: 'Shipping Addresses', route: '/settings' },
+    { icon: 'settings', title: 'Settings', route: '/settings' },
+  ];
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <Avatar uri={user?.avatar} name={user?.name} size={72} />
-          <Text style={styles.name}>{user?.name || 'Guest'}</Text>
-          <Text style={styles.email}>{user?.email || ''}</Text>
+      {/* HEADER */}
+      <View style={styles.header}>
+        <View style={styles.headerSpacer} />
+        <Text style={styles.headerTitle}>Profile</Text>
+        <Pressable onPress={handleLogout} style={styles.logoutBtn}>
+          <Feather name="log-out" size={24} color={Colors.black} />
+        </Pressable>
+      </View>
+
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* USER INFO */}
+        <View style={styles.userInfo}>
+          <View style={styles.avatar}>
+            <Feather name="user" size={40} color={Colors.gray500} />
+          </View>
+          <Text style={styles.userName}>{user?.name || 'User Name'}</Text>
+          <Text style={styles.userEmail}>{user?.email || 'user@example.com'}</Text>
         </View>
 
-        <View style={styles.menu}>
-          {menuItems
-            .filter((item) => !item.adminOnly || user?.role === 'admin')
-            .map((item, i) => (
-            <TouchableOpacity
-              key={i}
-              style={styles.menuItem}
+        {/* MENU LIST */}
+        <View style={styles.menuSection}>
+          {menuItems.map((item, index) => (
+            <Pressable 
+              key={index} 
+              style={styles.menuItem} 
               onPress={() => router.push(item.route as any)}
             >
-              <Text style={styles.menuIcon}>{item.icon}</Text>
-              <Text style={styles.menuLabel}>{item.label}</Text>
-              <Text style={styles.chevron}>›</Text>
-            </TouchableOpacity>
+              <View style={styles.menuItemLeft}>
+                <Feather name={item.icon as any} size={20} color={Colors.black} />
+                <Text style={styles.menuItemTitle}>{item.title}</Text>
+              </View>
+              <Feather name="chevron-right" size={20} color={Colors.gray500} />
+            </Pressable>
           ))}
         </View>
-
-        <TouchableOpacity 
-          style={user ? styles.logoutBtn : styles.loginBtn} 
-          onPress={handleAuthAction}
-        >
-          <Text style={user ? styles.logoutText : styles.loginText}>
-            {user ? 'Sign Out' : 'Sign In'}
-          </Text>
-        </TouchableOpacity>
       </ScrollView>
     </View>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: Colors.white,
   },
   header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: spacing.xl,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    paddingHorizontal: Spacing.screenH,
+    paddingVertical: 16,
   },
-  name: {
-    ...typography.heading,
-    color: colors.textPrimary,
-    marginTop: spacing.sm,
+  headerSpacer: {
+    width: 24,
   },
-  email: {
-    ...typography.body,
-    color: colors.textSecondary,
-    marginTop: 2,
+  headerTitle: {
+    ...(Typography.h1 as any),
   },
-  menu: {
-    marginTop: spacing.md,
-    paddingHorizontal: spacing.md,
+  logoutBtn: {
+    padding: 4,
+  },
+  scrollContent: {
+    paddingBottom: 40,
+  },
+  userInfo: {
+    alignItems: 'center',
+    marginTop: 24,
+    marginBottom: 40,
+  },
+  avatar: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: Colors.gray100,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  userName: {
+    ...(Typography.h1 as any),
+    marginBottom: 4,
+  },
+  userEmail: {
+    fontFamily: 'GeneralSans-Regular',
+    fontSize: 15,
+    color: Colors.gray500,
+  },
+  menuSection: {
+    paddingHorizontal: Spacing.screenH,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: spacing.md,
+    justifyContent: 'space-between',
+    paddingVertical: 20,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: Colors.gray100,
   },
-  menuIcon: {
-    fontSize: 20,
-    marginRight: spacing.md,
-  },
-  menuLabel: {
-    ...typography.body,
-    color: colors.textPrimary,
-    flex: 1,
-  },
-  chevron: {
-    ...typography.body,
-    color: colors.textSecondary,
-    fontSize: 20,
-  },
-  logoutBtn: {
-    margin: spacing.md,
-    padding: spacing.md,
-    backgroundColor: colors.error + '10',
-    borderRadius: borderRadius.card,
+  menuItemLeft: {
+    flexDirection: 'row',
     alignItems: 'center',
   },
-  logoutText: {
-    ...typography.button,
-    color: colors.error,
+  menuItemTitle: {
+    fontFamily: 'GeneralSans-Medium',
+    fontSize: 16,
+    color: Colors.black,
+    marginLeft: 16,
   },
-  loginBtn: {
-    margin: spacing.md,
-    padding: spacing.md,
-    backgroundColor: colors.primary,
-    borderRadius: borderRadius.card,
-    alignItems: 'center',
-  },
-  loginText: {
-    ...typography.button,
-    color: '#fff',
-  },
-})
+});

@@ -1,23 +1,22 @@
+import React from 'react'
 import { View, Text, StyleSheet } from 'react-native'
-import { colors } from '../../constants/colors'
-import { spacing } from '../../constants/spacing'
-import { typography } from '../../constants/typography'
-import { Button } from '../ui/Button'
+import { Colors, Spacing, Typography } from '../../constants/tokens'
+import { Button } from '../Button'
 
 interface ErrorStateProps {
   message?: string
   onRetry?: () => void
 }
 
-export function ErrorState({
-  message = 'Something went wrong',
-  onRetry,
-}: ErrorStateProps) {
+export function ErrorState({ message = 'Something went wrong', onRetry }: ErrorStateProps) {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Oops!</Text>
       <Text style={styles.message}>{message}</Text>
-      {onRetry && <Button title="Try Again" onPress={onRetry} />}
+      {onRetry && (
+        <Button variant="primary" onPress={onRetry} style={{ marginTop: Spacing.md }}>
+          Retry
+        </Button>
+      )}
     </View>
   )
 }
@@ -27,17 +26,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: spacing.xl,
-  },
-  title: {
-    ...typography.display,
-    color: colors.textPrimary,
-    marginBottom: spacing.sm,
+    padding: Spacing.xl,
   },
   message: {
-    ...typography.body,
-    color: colors.textSecondary,
+    fontFamily: 'GeneralSans-Regular',
+    fontSize: 15,
+    color: Colors.gray500,
     textAlign: 'center',
-    marginBottom: spacing.lg,
   },
 })

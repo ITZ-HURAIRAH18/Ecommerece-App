@@ -1,11 +1,9 @@
 import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useState } from 'react'
-import { colors } from '../../constants/colors'
-import { spacing } from '../../constants/spacing'
-import { typography } from '../../constants/typography'
-import { Input } from '../../components/ui/Input'
-import { Button } from '../../components/ui/Button'
+import { Colors, Spacing, Typography } from '../../constants/tokens'
+import { Input } from '../../components/Input'
+import { Button } from '../../components/Button'
 import { authService } from '../../services/authService'
 
 export default function ForgotPasswordScreen() {
@@ -50,10 +48,12 @@ export default function ForgotPasswordScreen() {
               An OTP has been sent to your email. Please check your inbox.
             </Text>
             <Button
-              title="Back to Login"
+              variant="primary"
               onPress={() => router.push('/(auth)/login')}
               style={styles.button}
-            />
+            >
+              Back to Login
+            </Button>
           </>
         ) : (
           <>
@@ -65,16 +65,17 @@ export default function ForgotPasswordScreen() {
               label="Email"
               value={email}
               onChangeText={setEmail}
-              placeholder="Enter your email"
               keyboardType="email-address"
               autoCapitalize="none"
             />
             <Button
-              title="Send OTP"
+              variant="primary"
               onPress={handleSend}
               loading={loading}
               style={styles.button}
-            />
+            >
+              Send OTP
+            </Button>
           </>
         )}
       </ScrollView>
@@ -85,39 +86,43 @@ export default function ForgotPasswordScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: Colors.white,
   },
   content: {
     flexGrow: 1,
     justifyContent: 'center',
-    padding: spacing.lg,
+    padding: Spacing.lg,
   },
   logo: {
-    ...typography.displaySmall,
-    color: colors.primary,
+    fontFamily: 'ClashDisplay-Semibold',
+    fontSize: 28,
+    color: Colors.primary,
     textAlign: 'center',
-    marginBottom: spacing.sm,
+    marginBottom: Spacing.sm,
   },
   title: {
-    ...typography.display,
-    color: colors.textPrimary,
+    fontFamily: 'ClashDisplay-Semibold',
+    fontSize: 32,
+    color: Colors.black,
     textAlign: 'center',
-    marginBottom: spacing.sm,
+    marginBottom: Spacing.sm,
   },
   subtitle: {
-    ...typography.body,
-    color: colors.textSecondary,
+    fontFamily: 'GeneralSans-Regular',
+    fontSize: 15,
+    color: Colors.gray500,
     textAlign: 'center',
-    marginBottom: spacing.xl,
+    marginBottom: Spacing.xl,
     lineHeight: 22,
   },
   error: {
-    ...typography.caption,
-    color: colors.error,
+    fontFamily: 'GeneralSans-Regular',
+    fontSize: 13,
+    color: Colors.error,
     textAlign: 'center',
-    marginBottom: spacing.md,
+    marginBottom: Spacing.md,
   },
   button: {
-    marginTop: spacing.sm,
+    marginTop: Spacing.sm,
   },
 })

@@ -1,32 +1,19 @@
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
-import { Image } from 'expo-image'
+import React from 'react'
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
 import { useRouter } from 'expo-router'
-import { colors } from '../../constants/colors'
-import { spacing, borderRadius } from '../../constants/spacing'
-import { typography } from '../../constants/typography'
-import { Badge } from '../ui/Badge'
-import { formatPrice } from '../../utils/formatPrice'
+import { Colors, Spacing, Typography, Radius } from '../../constants/tokens'
 
-interface OrderCardProps {
-  order: {
-    _id: string
-    orderNumber: string
-    orderStatus: string
-    total: number
-    items: Array<{ image: string; name: string; quantity: number }>
-    createdAt: string
-  }
+interface OrderItem {
+  _id: string
+  orderNumber: string
+  orderStatus: string
+  total: number
+  createdAt: string
+  items: Array<{ name: string; quantity: number; price: number }>
 }
 
-const statusVariant: Record<string, 'primary' | 'success' | 'warning' | 'error' | 'neutral'> = {
-  placed: 'primary',
-  confirmed: 'primary',
-  processing: 'warning',
-  shipped: 'warning',
-  out_for_delivery: 'warning',
-  delivered: 'success',
-  cancelled: 'error',
-  returned: 'error',
+interface OrderCardProps {
+  order: OrderItem
 }
 
 export function OrderCard({ order }: OrderCardProps) {
@@ -35,36 +22,20 @@ export function OrderCard({ order }: OrderCardProps) {
   return (
     <TouchableOpacity
       style={styles.card}
-      activeOpacity={0.9}
       onPress={() => router.push(`/order/${order._id}`)}
     >
       <View style={styles.header}>
         <Text style={styles.orderNumber}>{order.orderNumber}</Text>
-        <Badge
-          label={order.orderStatus.replace(/_/g, ' ')}
-          variant={statusVariant[order.orderStatus] || 'neutral'}
-        />
+        <View style={[styles.statusBadge, { backgroundColor: order.orderStatus === 'delivered' ? '#DCFCE7' : '#FEF3C7' }]}>
+          <Text style={[styles.statusText, { color: order.orderStatus === 'delivered' ? '#16A34A' : '#D97706' }]}>
+            {order.orderStatus.replace(/_/g, ' ')}
+          </Text>
+        </View>
       </View>
-      <View style={styles.items}>
-        {order.items.slice(0, 3).map((item, i) => (
-          <Image
-            key={i}
-            source={{ uri: item.image }}
-            style={styles.itemImage}
-            contentFit="cover"
-          />
-        ))}
-        {order.items.length > 3 && (
-          <View style={styles.moreBadge}>
-            <Text style={styles.moreText}>+{order.items.length - 3}</Text>
-          </View>
-        )}
-      </View>
+      <Text style={styles.itemCount}>{order.items?.length || 0} item(s)</Text>
       <View style={styles.footer}>
-        <Text style={styles.date}>
-          {new Date(order.createdAt).toLocaleDateString()}
-        </Text>
-        <Text style={styles.total}>{formatPrice(order.total)}</Text>
+        <Text style={styles.total}>${order.total?.toFixed(2)}</Text>
+        <Text style={styles.date}>{new Date(order.createdAt).toLocaleDateString()}</Text>
       </View>
     </TouchableOpacity>
   )
@@ -72,62 +43,52 @@ export function OrderCard({ order }: OrderCardProps) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.background,
-    borderRadius: borderRadius.card,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    elevation: 2,
+    backgroundColor: Colors.white,
+    padding: Spacing.md,
+    borderRadius: Radius.md,
+    marginBottom: Spacing.sm,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.sm,
+    marginBottom: Spacing.xs,
   },
   orderNumber: {
-    ...typography.caption,
-    color: colors.textSecondary,
-    fontWeight: '600',
+    fontFamily: 'GeneralSans-Medium',
+    fontSize: 15,
+    color: Colors.black,
   },
-  items: {
-    flexDirection: 'row',
-    marginBottom: spacing.sm,
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: Radius.sm,
   },
-  itemImage: {
-    width: 48,
-    height: 48,
-    borderRadius: 6,
-    marginRight: spacing.xs,
-    backgroundColor: colors.secondaryBg,
+  statusText: {
+    fontFamily: 'GeneralSans-Medium',
+    fontSize: 11,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
-  moreBadge: {
-    width: 48,
-    height: 48,
-    borderRadius: 6,
-    backgroundColor: colors.secondaryBg,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  moreText: {
-    ...typography.caption,
-    fontWeight: '600',
-    color: colors.textSecondary,
+  itemCount: {
+    fontFamily: 'GeneralSans-Regular',
+    fontSize: 13,
+    color: Colors.gray500,
+    marginBottom: Spacing.sm,
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  date: {
-    ...typography.caption,
-    color: colors.textSecondary,
-  },
   total: {
-    ...typography.body,
-    fontWeight: '600',
-    color: colors.textPrimary,
+    fontFamily: 'ClashDisplay-Semibold',
+    fontSize: 18,
+    color: Colors.black,
+  },
+  date: {
+    fontFamily: 'GeneralSans-Regular',
+    fontSize: 13,
+    color: Colors.gray500,
   },
 })

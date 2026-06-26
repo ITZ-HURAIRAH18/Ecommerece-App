@@ -1,143 +1,257 @@
-import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native'
-import { useRouter } from 'expo-router'
-import { useState } from 'react'
-import { colors } from '../../constants/colors'
-import { spacing } from '../../constants/spacing'
-import { typography } from '../../constants/typography'
-import { Input } from '../../components/ui/Input'
-import { Button } from '../../components/ui/Button'
-import { useAuthStore } from '../../stores/authStore'
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Pressable } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Feather } from '@expo/vector-icons';
+import { Colors, Spacing, Typography } from '../../constants/tokens';
+import { Input } from '../../components/Input';
+import { Button } from '../../components/Button';
+import { useAuthStore } from '../../stores/authStore';
 
 export default function RegisterScreen() {
-  const router = useRouter()
-  const { register } = useAuthStore()
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const router = useRouter();
+  const { register } = useAuthStore();
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  // Password strength logic
+  const calculateStrength = () => {
+    let strength = 0;
+    if (password.length > 5) strength += 1;
+    if (password.length > 8) strength += 1;
+    if (/[A-Z]/.test(password)) strength += 1;
+    if (/[0-9]/.test(password) || /[^A-Za-z0-9]/.test(password)) strength += 1;
+    return strength;
+  };
+
+  const strength = calculateStrength();
+  const getStrengthLabel = () => {
+    if (password.length === 0) return '';
+    if (strength <= 1) return 'Weak';
+    if (strength === 2) return 'Fair';
+    if (strength === 3) return 'Strong';
+    return 'Very strong';
+  };
 
   const handleRegister = async () => {
-    if (!name || !email || !password) {
-      setError('Please fill in all fields')
-      return
+    if (!fullName || !email || !password || !confirmPassword) {
+      setError('Please fill in all fields');
+      return;
     }
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters')
-      return
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
     }
-    setLoading(true)
-    setError('')
+    setLoading(true);
+    setError('');
     try {
-      await register(name, email, password)
-      router.push('/(auth)/login')
+      await register(email, password, fullName);
+      router.replace('/(tabs)');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Registration failed')
+      setError(err.response?.data?.message || 'Registration failed');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <ScrollView
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
+    <View style={styles.container}>
+      <KeyboardAvoidingView
+        style={styles.keyboardView}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <Text style={styles.logo}>ShopEase</Text>
-        <Text style={styles.title}>Create account</Text>
-        <Text style={styles.subtitle}>Join us and start shopping</Text>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          {/* TOP SECTION */}
+          <View style={styles.topSection}>
+            <Pressable style={styles.backButton} onPress={() => router.back()}>
+              <Feather name="chevron-left" size={24} color={Colors.black} />
+            </Pressable>
+            <View style={styles.headerTextContainer}>
+              <Text style={styles.title}>Create account.</Text>
+              <Text style={styles.subtitle}>Join thousands of smart shoppers</Text>
+            </View>
+          </View>
 
-        {error ? <Text style={styles.error}>{error}</Text> : null}
+          {/* FORM SECTION */}
+          <View style={styles.formSection}>
+            {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-        <Input label="Name" value={name} onChangeText={setName} placeholder="Enter your name" />
-        <Input
-          label="Email"
-          value={email}
-          onChangeText={setEmail}
-          placeholder="Enter your email"
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
-        <Input
-          label="Password"
-          value={password}
-          onChangeText={setPassword}
-          placeholder="At least 8 characters"
-          secureTextEntry
-        />
-        <Button
-          title="Create Account"
-          onPress={handleRegister}
-          loading={loading}
-          style={styles.button}
-        />
+            <Input
+              label="Full name"
+              value={fullName}
+              onChangeText={setFullName}
+              autoCapitalize="words"
+            />
+            
+            <View style={styles.gap16} />
 
-        <View style={styles.loginRow}>
-          <Text style={styles.loginText}>Already have an account? </Text>
-          <Text
-            style={styles.loginLink}
-            onPress={() => router.push('/(auth)/login')}
-          >
-            Sign In
-          </Text>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
-  )
+            <Input
+              label="Email address"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            
+            <View style={styles.gap16} />
+            
+            <Input
+              label="Password"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPassword}
+              rightIcon={
+                <Feather 
+                  name={showPassword ? 'eye-off' : 'eye'} 
+                  size={20} 
+                  color={Colors.gray500} 
+                />
+              }
+              onRightIconPress={() => setShowPassword(!showPassword)}
+            />
+
+            <View style={styles.gap16} />
+
+            <Input
+              label="Confirm password"
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              secureTextEntry={!showPassword}
+            />
+
+            {/* Password Strength Indicator */}
+            {password.length > 0 && (
+              <View style={styles.strengthContainer}>
+                <View style={styles.strengthBars}>
+                  {[1, 2, 3, 4].map((level) => (
+                    <View
+                      key={level}
+                      style={[
+                        styles.strengthBar,
+                        { backgroundColor: strength >= level ? Colors.primary : Colors.gray300 }
+                      ]}
+                    />
+                  ))}
+                </View>
+                <Text style={styles.strengthLabel}>{getStrengthLabel()}</Text>
+              </View>
+            )}
+
+            <View style={styles.gap32} />
+
+            <Button
+              variant="primary"
+              size="lg"
+              fullWidth
+              onPress={handleRegister}
+              loading={loading}
+            >
+              Create account
+            </Button>
+
+            <View style={styles.gap24} />
+
+            <View style={styles.bottomRow}>
+              <Text style={styles.bottomText}>Already have an account? </Text>
+              <Pressable onPress={() => router.push('/(auth)/login')}>
+                <Text style={styles.bottomLink}>Sign in</Text>
+              </Pressable>
+            </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: Colors.white,
   },
-  content: {
+  keyboardView: {
+    flex: 1,
+  },
+  scrollContent: {
     flexGrow: 1,
-    justifyContent: 'center',
-    padding: spacing.lg,
+    paddingHorizontal: Spacing.screenH,
   },
-  logo: {
-    ...typography.displaySmall,
-    color: colors.primary,
-    textAlign: 'center',
-    marginBottom: spacing.sm,
+  topSection: {
+    paddingTop: 60,
+    marginBottom: 24,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+  },
+  headerTextContainer: {
+    marginTop: 8,
   },
   title: {
-    ...typography.display,
-    color: colors.textPrimary,
-    textAlign: 'center',
+    ...(Typography.display as any),
+    fontSize: 32,
+    marginBottom: 8,
   },
   subtitle: {
-    ...typography.body,
-    color: colors.textSecondary,
+    ...(Typography.body as any),
+    color: Colors.gray500,
+  },
+  formSection: {
+    paddingBottom: 40,
+  },
+  gap16: { height: 16 },
+  gap24: { height: 24 },
+  gap32: { height: 32 },
+  errorText: {
+    ...(Typography.small as any),
+    color: Colors.error,
+    marginBottom: 16,
     textAlign: 'center',
-    marginBottom: spacing.xl,
   },
-  error: {
-    ...typography.caption,
-    color: colors.error,
-    textAlign: 'center',
-    marginBottom: spacing.md,
+  strengthContainer: {
+    marginTop: 12,
   },
-  button: {
-    marginTop: spacing.sm,
+  strengthBars: {
+    flexDirection: 'row',
+    gap: 4,
+    marginBottom: 6,
   },
-  loginRow: {
+  strengthBar: {
+    flex: 1,
+    height: 4,
+    borderRadius: 2,
+  },
+  strengthLabel: {
+    fontFamily: 'GeneralSans-Regular',
+    fontSize: 12,
+    color: Colors.gray700,
+    textAlign: 'right',
+  },
+  bottomRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: spacing.xl,
+    alignItems: 'center',
   },
-  loginText: {
-    ...typography.body,
-    color: colors.textSecondary,
+  bottomText: {
+    fontFamily: 'GeneralSans-Regular',
+    fontSize: 14,
+    color: Colors.gray700,
   },
-  loginLink: {
-    ...typography.body,
-    color: colors.primary,
-    fontWeight: '600',
+  bottomLink: {
+    fontFamily: 'GeneralSans-Medium',
+    fontSize: 14,
+    color: Colors.primary,
   },
-})
+});

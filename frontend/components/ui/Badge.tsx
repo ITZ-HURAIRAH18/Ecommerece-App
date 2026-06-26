@@ -1,40 +1,39 @@
+import React from 'react'
 import { View, Text, StyleSheet } from 'react-native'
-import { colors } from '../../constants/colors'
-import { borderRadius } from '../../constants/spacing'
-import { typography } from '../../constants/typography'
+import { Colors, Radius, Typography } from '../../constants/tokens'
 
 interface BadgeProps {
   label: string
-  variant?: 'primary' | 'success' | 'warning' | 'error' | 'neutral'
+  variant?: 'primary' | 'success' | 'error' | 'warning' | 'neutral'
 }
 
-const variantColors = {
-  primary: { bg: colors.primary + '20', text: colors.primary },
-  success: { bg: colors.success + '20', text: colors.success },
-  warning: { bg: colors.warning + '20', text: colors.warning },
-  error: { bg: colors.error + '20', text: colors.error },
-  neutral: { bg: colors.secondaryBg, text: colors.textSecondary },
+const variantStyles: Record<string, { bg: string; text: string }> = {
+  primary: { bg: Colors.primaryLight, text: Colors.primary },
+  success: { bg: '#DCFCE7', text: '#16A34A' },
+  error:   { bg: '#FEE2E2', text: '#DC2626' },
+  warning: { bg: '#FEF3C7', text: '#D97706' },
+  neutral: { bg: Colors.gray100, text: Colors.gray700 },
 }
 
-export function Badge({ label, variant = 'primary' }: BadgeProps) {
-  const vc = variantColors[variant]
-
+export function Badge({ label, variant = 'neutral' }: BadgeProps) {
+  const vs = variantStyles[variant] || variantStyles.neutral
   return (
-    <View style={[styles.badge, { backgroundColor: vc.bg }]}>
-      <Text style={[styles.text, { color: vc.text }]}>{label}</Text>
+    <View style={[styles.badge, { backgroundColor: vs.bg }]}>
+      <Text style={[styles.text, { color: vs.text }]}>{label}</Text>
     </View>
   )
 }
 
 const styles = StyleSheet.create({
   badge: {
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: borderRadius.pill,
-    alignSelf: 'flex-start',
+    borderRadius: Radius.sm,
   },
   text: {
-    ...typography.caption,
-    fontWeight: '600',
+    fontFamily: 'GeneralSans-Medium',
+    fontSize: 11,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
 })

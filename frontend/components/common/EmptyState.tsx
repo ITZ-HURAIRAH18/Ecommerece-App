@@ -1,31 +1,26 @@
+import React from 'react'
 import { View, Text, StyleSheet } from 'react-native'
-import { colors } from '../../constants/colors'
-import { spacing } from '../../constants/spacing'
-import { typography } from '../../constants/typography'
-import { Button } from '../ui/Button'
+import { Colors, Spacing } from '../../constants/tokens'
+import { Button } from '../Button'
 
 interface EmptyStateProps {
   icon?: string
-  title: string
+  title?: string
   message?: string
   actionLabel?: string
   onAction?: () => void
 }
 
-export function EmptyState({
-  icon = '📭',
-  title,
-  message,
-  actionLabel,
-  onAction,
-}: EmptyStateProps) {
+export function EmptyState({ icon, title, message, actionLabel, onAction }: EmptyStateProps) {
   return (
     <View style={styles.container}>
-      <Text style={styles.icon}>{icon}</Text>
-      <Text style={styles.title}>{title}</Text>
+      {icon && <Text style={styles.icon}>{icon}</Text>}
+      {title && <Text style={styles.title}>{title}</Text>}
       {message && <Text style={styles.message}>{message}</Text>}
       {actionLabel && onAction && (
-        <Button title={actionLabel} onPress={onAction} style={styles.button} />
+        <Button variant="primary" onPress={onAction} style={{ marginTop: Spacing.md }}>
+          {actionLabel}
+        </Button>
       )}
     </View>
   )
@@ -36,25 +31,23 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: spacing.xl,
+    padding: Spacing.xl,
   },
   icon: {
-    fontSize: 64,
-    marginBottom: spacing.md,
+    fontSize: 48,
+    marginBottom: Spacing.md,
   },
   title: {
-    ...typography.heading,
-    color: colors.textPrimary,
-    textAlign: 'center',
-    marginBottom: spacing.sm,
+    fontFamily: 'ClashDisplay-Medium',
+    fontSize: 20,
+    color: Colors.black,
+    marginBottom: Spacing.sm,
   },
   message: {
-    ...typography.body,
-    color: colors.textSecondary,
+    fontFamily: 'GeneralSans-Regular',
+    fontSize: 15,
+    color: Colors.gray500,
     textAlign: 'center',
-    marginBottom: spacing.lg,
-  },
-  button: {
-    minWidth: 160,
+    lineHeight: 22,
   },
 })

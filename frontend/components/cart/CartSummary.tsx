@@ -1,8 +1,6 @@
+import React from 'react'
 import { View, Text, StyleSheet } from 'react-native'
-import { colors } from '../../constants/colors'
-import { spacing } from '../../constants/spacing'
-import { typography } from '../../constants/typography'
-import { formatPrice } from '../../utils/formatPrice'
+import { Colors, Spacing, Typography, Radius } from '../../constants/tokens'
 
 interface CartSummaryProps {
   subtotal: number
@@ -16,25 +14,22 @@ export function CartSummary({ subtotal, shipping, discount, total }: CartSummary
     <View style={styles.container}>
       <View style={styles.row}>
         <Text style={styles.label}>Subtotal</Text>
-        <Text style={styles.value}>{formatPrice(subtotal)}</Text>
+        <Text style={styles.value}>${subtotal.toFixed(2)}</Text>
       </View>
       <View style={styles.row}>
         <Text style={styles.label}>Shipping</Text>
-        <Text style={styles.value}>
-          {shipping === 0 ? 'FREE' : formatPrice(shipping)}
-        </Text>
+        <Text style={styles.value}>{shipping === 0 ? 'FREE' : `$${shipping.toFixed(2)}`}</Text>
       </View>
       {discount > 0 && (
         <View style={styles.row}>
-          <Text style={[styles.label, { color: colors.success }]}>Discount</Text>
-          <Text style={[styles.value, { color: colors.success }]}>
-            -{formatPrice(discount)}
-          </Text>
+          <Text style={[styles.label, { color: Colors.success }]}>Discount</Text>
+          <Text style={[styles.value, { color: Colors.success }]}>-${discount.toFixed(2)}</Text>
         </View>
       )}
-      <View style={[styles.row, styles.totalRow]}>
+      <View style={styles.divider} />
+      <View style={styles.row}>
         <Text style={styles.totalLabel}>Total</Text>
-        <Text style={styles.totalValue}>{formatPrice(total)}</Text>
+        <Text style={styles.totalValue}>${total.toFixed(2)}</Text>
       </View>
     </View>
   )
@@ -42,37 +37,39 @@ export function CartSummary({ subtotal, shipping, discount, total }: CartSummary
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: colors.background,
-    padding: spacing.md,
-    borderRadius: 8,
-    marginBottom: spacing.md,
+    marginTop: Spacing.lg,
+    padding: Spacing.md,
+    backgroundColor: Colors.gray100,
+    borderRadius: Radius.md,
   },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: spacing.sm,
+    marginBottom: Spacing.sm,
   },
   label: {
-    ...typography.body,
-    color: colors.textSecondary,
+    fontFamily: 'GeneralSans-Regular',
+    fontSize: 14,
+    color: Colors.gray700,
   },
   value: {
-    ...typography.body,
-    color: colors.textPrimary,
-    fontWeight: '500',
+    fontFamily: 'GeneralSans-Medium',
+    fontSize: 14,
+    color: Colors.black,
   },
-  totalRow: {
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    paddingTop: spacing.sm,
-    marginTop: spacing.xs,
+  divider: {
+    height: 1,
+    backgroundColor: Colors.gray300,
+    marginVertical: Spacing.sm,
   },
   totalLabel: {
-    ...typography.heading,
-    color: colors.textPrimary,
+    fontFamily: 'GeneralSans-Medium',
+    fontSize: 16,
+    color: Colors.black,
   },
   totalValue: {
-    ...typography.heading,
-    color: colors.primary,
+    fontFamily: 'ClashDisplay-Semibold',
+    fontSize: 20,
+    color: Colors.primary,
   },
 })

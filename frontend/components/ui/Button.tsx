@@ -1,72 +1,22 @@
-import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, ViewStyle } from 'react-native'
-import { colors } from '../../constants/colors'
-import { spacing, borderRadius } from '../../constants/spacing'
-import { typography } from '../../constants/typography'
+import React from 'react'
+import { StyleProp, ViewStyle } from 'react-native'
+import { Button as AppButton } from '../Button'
 
-interface ButtonProps {
+interface UIButtonProps {
   title: string
-  onPress: () => void
+  onPress?: () => void
   variant?: 'primary' | 'outline' | 'ghost'
   size?: 'sm' | 'md' | 'lg'
   loading?: boolean
   disabled?: boolean
-  style?: ViewStyle
+  style?: StyleProp<ViewStyle>
 }
 
-export function Button({
-  title,
-  onPress,
-  variant = 'primary',
-  size = 'md',
-  loading = false,
-  disabled = false,
-  style,
-}: ButtonProps) {
-  const isPrimary = variant === 'primary'
-  const isOutline = variant === 'outline'
-
-  const height = size === 'sm' ? 36 : size === 'lg' ? 52 : 44
-
+export function Button({ title, variant, ...props }: UIButtonProps) {
+  const mappedVariant = variant === 'outline' ? 'secondary' : variant as 'primary' | 'secondary' | 'ghost' | undefined
   return (
-    <TouchableOpacity
-      onPress={onPress}
-      disabled={disabled || loading}
-      activeOpacity={0.8}
-      style={[
-        styles.base,
-        {
-          height,
-          backgroundColor: isPrimary ? colors.primary : 'transparent',
-          borderWidth: isOutline ? 1.5 : 0,
-          borderColor: isOutline ? colors.primary : 'transparent',
-          opacity: disabled ? 0.5 : 1,
-        },
-        style,
-      ]}
-    >
-      {loading ? (
-        <ActivityIndicator color={isPrimary ? colors.white : colors.primary} />
-      ) : (
-        <Text
-          style={[
-            typography.button,
-            {
-              color: isPrimary ? colors.white : colors.primary,
-            },
-          ]}
-        >
-          {title}
-        </Text>
-      )}
-    </TouchableOpacity>
+    <AppButton variant={mappedVariant} {...props}>
+      {title}
+    </AppButton>
   )
 }
-
-const styles = StyleSheet.create({
-  base: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: borderRadius.card,
-    paddingHorizontal: spacing.lg,
-  },
-})

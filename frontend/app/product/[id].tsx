@@ -1,46 +1,42 @@
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Dimensions, Platform } from 'react-native'
-import { Image } from 'expo-image'
-import { useLocalSearchParams, useRouter } from 'expo-router'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useState } from 'react'
-import { colors } from '../../constants/colors'
-import { spacing, borderRadius } from '../../constants/spacing'
-import { typography } from '../../constants/typography'
-import { Chip } from '../../components/ui/Chip'
-import { Badge } from '../../components/ui/Badge'
-import { Button } from '../../components/ui/Button'
-import { formatPrice } from '../../utils/formatPrice'
-import { useProduct } from '../../hooks/useProducts'
-import { useCartStore } from '../../stores/cartStore'
-import { useWishlistStore } from '../../stores/wishlistStore'
-import { SkeletonLoader } from '../../components/common/SkeletonLoader'
-import { ErrorState } from '../../components/common/ErrorState'
+import React, { useState } from 'react';
+import { View, Text, ScrollView, StyleSheet, Dimensions, Platform, Pressable } from 'react-native';
+import { Image } from 'expo-image';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Feather } from '@expo/vector-icons';
+import { Colors, Spacing, Typography, Radius } from '../../constants/tokens';
+import { Button } from '../../components/Button';
+import { CategoryChip } from '../../components/CategoryChip';
+import { useProduct } from '../../hooks/useProducts';
+import { useCartStore } from '../../stores/cartStore';
+import { useWishlistStore } from '../../stores/wishlistStore';
+import { SkeletonLoader } from '../../components/common/SkeletonLoader';
+import { ErrorState } from '../../components/common/ErrorState';
 
-const { width } = Dimensions.get('window')
-const IMAGE_HEIGHT = width * 0.85
+const { width } = Dimensions.get('window');
 
 export default function ProductDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>()
-  const insets = useSafeAreaInsets()
-  const router = useRouter()
-  const { data, isLoading, error, refetch } = useProduct(id!)
-  const { addItem } = useCartStore()
-  const { toggle, isWishlisted } = useWishlistStore()
-  const [selectedImage, setSelectedImage] = useState(0)
-  const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({})
-  const [qty, setQty] = useState(1)
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const { data, isLoading, error, refetch } = useProduct(id!);
+  const { addItem } = useCartStore();
+  const { toggle, isWishlisted } = useWishlistStore();
+  const [selectedImage, setSelectedImage] = useState(0);
+  const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({});
+  const [qty, setQty] = useState(1);
 
   if (isLoading) {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
-        <SkeletonLoader height={300} />
-        <View style={{ padding: spacing.md }}>
-          <SkeletonLoader height={24} width="80%" style={{ marginBottom: 8 }} />
-          <SkeletonLoader height={20} width="40%" style={{ marginBottom: 16 }} />
+        <SkeletonLoader height={width} />
+        <View style={{ padding: Spacing.screenH, gap: 16 }}>
+          <SkeletonLoader height={32} width="80%" />
+          <SkeletonLoader height={24} width="40%" />
           <SkeletonLoader height={100} />
         </View>
       </View>
-    )
+    );
   }
 
   if (error || !data?.data?.data) {
@@ -48,66 +44,76 @@ export default function ProductDetailScreen() {
       <View style={[styles.container, { paddingTop: insets.top }]}>
         <ErrorState message="Failed to load product" onRetry={refetch} />
       </View>
-    )
+    );
   }
 
-  const product = data.data.data
-  const wishlisted = isWishlisted(product._id)
-  const hasDiscount = product.discountPrice && product.discountPrice < product.price
+  const product = data.data.data;
+  const wishlisted = isWishlisted(product._id);
+  const hasDiscount = product.discountPrice && product.discountPrice < product.price;
 
   const handleAddToCart = async () => {
-    await addItem(product._id, qty, selectedVariants)
-  }
+    await addItem(product._id, qty, selectedVariants);
+  };
 
   const handleBuyNow = async () => {
-    await addItem(product._id, qty, selectedVariants)
-    router.push('/checkout')
-  }
+    await addItem(product._id, qty, selectedVariants);
+    router.push('/checkout');
+  };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={styles.container}>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 100 }}
+        contentContainerStyle={{ paddingBottom: 120 }} // Space for dock
+        bounces={false}
       >
-        <ScrollView
-          horizontal
-          pagingEnabled
-          showsHorizontalScrollIndicator={false}
-          style={{ height: IMAGE_HEIGHT }}
-        >
-          {product.images.map((img: string, index: number) => (
-            <Image
-              key={index}
-              source={{ uri: img }}
-              style={{ width, height: IMAGE_HEIGHT }}
-              contentFit="cover"
-              transition={300}
-            />
-          ))}
-        </ScrollView>
-        <View style={styles.imageOverlay}>
-          <TouchableOpacity
-            style={styles.backBtn}
-            onPress={() => router.back()}
+        {/* IMAGE CAROUSEL */}
+        <View style={styles.imageContainer}>
+          <ScrollView
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onScroll={(e) => {
+              const slide = Math.round(e.nativeEvent.contentOffset.x / width);
+              if (slide !== selectedImage) setSelectedImage(slide);
+            }}
+            scrollEventThrottle={16}
+            style={{ width, height: width }}
           >
-            <Text style={styles.backText}>←</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.wishlistBtn}
-            onPress={() => toggle(product._id)}
-          >
-            <Text style={styles.wishlistIcon}>{wishlisted ? '❤️' : '🤍'}</Text>
-          </TouchableOpacity>
+            {product.images.map((img: any, index: number) => (
+              <Image
+                key={index}
+                source={img.url || img}
+                style={{ width, height: width }}
+                contentFit="cover"
+              />
+            ))}
+          </ScrollView>
+
+          {/* FLOATING HEADER ON IMAGE */}
+          <View style={[styles.floatingHeader, { top: Math.max(insets.top, 16) }]}>
+            <Pressable style={styles.iconBtn} onPress={() => router.back()}>
+              <Feather name="chevron-left" size={24} color={Colors.black} />
+            </Pressable>
+            <Pressable style={styles.iconBtn} onPress={() => toggle(product._id)}>
+              <Feather 
+                name="heart" 
+                size={22} 
+                color={wishlisted ? Colors.primary : Colors.black} 
+                style={wishlisted ? { fill: Colors.primary } as any : {}}
+              />
+            </Pressable>
+          </View>
+
+          {/* DOTS PAGINATION */}
           {product.images.length > 1 && (
-            <View style={styles.dots}>
-              {product.images.map((_: string, i: number) => (
-                <TouchableOpacity
+            <View style={styles.dotsContainer}>
+              {product.images.map((_: any, i: number) => (
+                <View
                   key={i}
-                  onPress={() => setSelectedImage(i)}
                   style={[
                     styles.dot,
-                    { backgroundColor: i === selectedImage ? colors.primary : colors.border },
+                    i === selectedImage ? styles.dotActive : styles.dotInactive
                   ]}
                 />
               ))}
@@ -115,330 +121,263 @@ export default function ProductDetailScreen() {
           )}
         </View>
 
+        {/* DETAILS SECTION */}
         <View style={styles.details}>
-          <Text style={styles.name}>{product.name}</Text>
-          <View style={styles.ratingRow}>
-            <Text style={styles.stars}>
-              {'⭐'.repeat(Math.round(product.ratingsAverage))}
-            </Text>
-            <Text style={styles.ratingValue}>
-              {product.ratingsAverage.toFixed(1)} ({product.ratingsCount} reviews)
-            </Text>
-          </View>
-
+          <Text style={styles.title}>{product.name}</Text>
+          
           <View style={styles.priceRow}>
             {hasDiscount ? (
               <>
-                <Text style={styles.discountPrice}>{formatPrice(product.discountPrice!)}</Text>
-                <Text style={styles.originalPrice}>{formatPrice(product.price)}</Text>
-                <Badge
-                  label={`${Math.round(((product.price - product.discountPrice!) / product.price) * 100)}% OFF`}
-                  variant="error"
-                />
+                <Text style={styles.price}>${product.discountPrice.toFixed(2)}</Text>
+                <Text style={styles.oldPrice}>${product.price.toFixed(2)}</Text>
+                <View style={styles.discountBadge}>
+                  <Text style={styles.discountText}>
+                    {Math.round(((product.price - product.discountPrice!) / product.price) * 100)}% OFF
+                  </Text>
+                </View>
               </>
             ) : (
-              <Text style={styles.price}>{formatPrice(product.price)}</Text>
+              <Text style={styles.price}>${product.price.toFixed(2)}</Text>
             )}
           </View>
 
-          {product.stock > 0 && product.stock <= 5 && (
-            <Text style={styles.stockWarning}>Only {product.stock} left in stock</Text>
-          )}
-          {product.stock === 0 && (
-            <Text style={styles.outOfStock}>Out of stock</Text>
-          )}
+          <View style={styles.ratingRow}>
+            <Feather name="star" size={16} color={Colors.primary} style={{ fill: Colors.primary } as any} />
+            <Text style={styles.ratingText}>
+              {product.ratingsAverage?.toFixed(1) || '4.5'} ({product.ratingsCount || 0} reviews)
+            </Text>
+          </View>
 
+          {/* VARIANTS */}
           {product.variants?.map((v: { name: string; options: string[] }) => (
             <View key={v.name} style={styles.variantSection}>
-              <Text style={styles.variantLabel}>{v.name}: {selectedVariants[v.name] || 'Select'}</Text>
+              <Text style={styles.sectionTitle}>{v.name}</Text>
               <View style={styles.variantOptions}>
                 {v.options.map((opt: string) => (
-                  <Chip
+                  <CategoryChip
                     key={opt}
                     label={opt}
-                    selected={selectedVariants[v.name] === opt}
-                    onPress={() =>
-                      setSelectedVariants((prev) => ({ ...prev, [v.name]: opt }))
-                    }
+                    active={selectedVariants[v.name] === opt}
+                    onPress={() => setSelectedVariants((prev) => ({ ...prev, [v.name]: opt }))}
                   />
                 ))}
               </View>
             </View>
           ))}
 
+          {/* QUANTITY */}
           <View style={styles.qtySection}>
-            <Text style={styles.qtyLabel}>Quantity</Text>
+            <Text style={styles.sectionTitle}>Quantity</Text>
             <View style={styles.stepper}>
-              <TouchableOpacity
-                style={styles.stepperBtn}
-                onPress={() => setQty(Math.max(1, qty - 1))}
-              >
-                <Text style={styles.stepperText}>-</Text>
-              </TouchableOpacity>
-              <Text style={styles.qtyValue}>{qty}</Text>
-              <TouchableOpacity
-                style={styles.stepperBtn}
-                onPress={() => setQty(Math.min(product.stock || 99, qty + 1))}
-              >
-                <Text style={styles.stepperText}>+</Text>
-              </TouchableOpacity>
+              <Pressable style={styles.stepperBtn} onPress={() => setQty(Math.max(1, qty - 1))}>
+                <Feather name="minus" size={16} color={Colors.black} />
+              </Pressable>
+              <Text style={styles.qtyText}>{qty}</Text>
+              <Pressable style={styles.stepperBtn} onPress={() => setQty(Math.min(product.stock || 99, qty + 1))}>
+                <Feather name="plus" size={16} color={Colors.black} />
+              </Pressable>
             </View>
           </View>
 
+          <View style={styles.divider} />
+
+          {/* DESCRIPTION */}
           <View style={styles.descriptionSection}>
             <Text style={styles.sectionTitle}>Description</Text>
-            <Text style={styles.description}>
-              {product.description || product.shortDescription}
+            <Text style={styles.descriptionText}>
+              {product.description || product.shortDescription || 'No description available for this product.'}
             </Text>
           </View>
 
-          {product.specifications?.length > 0 && (
-            <View style={styles.specSection}>
-              <Text style={styles.sectionTitle}>Specifications</Text>
-              {product.specifications.map((spec: { key: string; value: string }, i: number) => (
-                <View key={i} style={styles.specRow}>
-                  <Text style={styles.specKey}>{spec.key}</Text>
-                  <Text style={styles.specValue}>{spec.value}</Text>
-                </View>
-              ))}
-            </View>
-          )}
         </View>
       </ScrollView>
 
-      <View style={[styles.bottomBar, { paddingBottom: Platform.OS === 'ios' ? 32 : 16 }]}>
-        <Button
-          title="Add to Cart"
-          onPress={handleAddToCart}
-          variant="outline"
-          style={styles.addToCartBtn}
-        />
-        <Button
-          title="Buy Now"
-          onPress={handleBuyNow}
-          style={styles.buyNowBtn}
-        />
+      {/* BOTTOM DOCK */}
+      <View style={[styles.bottomDock, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+        <View style={styles.dockRow}>
+          <View style={{ flex: 1, marginRight: 12 }}>
+            <Button variant="secondary" size="lg" onPress={handleAddToCart}>
+              Add to Cart
+            </Button>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Button variant="primary" size="lg" onPress={handleBuyNow}>
+              Buy Now
+            </Button>
+          </View>
+        </View>
       </View>
     </View>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: Colors.white,
   },
   imageContainer: {
     position: 'relative',
+    width: width,
+    height: width,
   },
-  imageOverlay: {
+  floatingHeader: {
     position: 'absolute',
-    top: 0,
     left: 0,
     right: 0,
-    bottom: 0,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.screenH,
   },
-  backBtn: {
-    position: 'absolute',
-    top: spacing.md,
-    left: spacing.md,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.white,
+  iconBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: Colors.white,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 1 },
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    elevation: 3,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  backText: {
-    fontSize: 20,
-    color: colors.textPrimary,
-  },
-  wishlistBtn: {
+  dotsContainer: {
     position: 'absolute',
-    top: spacing.md,
-    right: spacing.md,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.white,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    elevation: 3,
-  },
-  wishlistIcon: {
-    fontSize: 18,
-  },
-  dots: {
+    bottom: 16,
+    left: 0,
+    right: 0,
     flexDirection: 'row',
     justifyContent: 'center',
-    position: 'absolute',
-    bottom: spacing.md,
-    left: 0,
-    right: 0,
+    gap: 8,
   },
   dot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    marginHorizontal: 3,
+  },
+  dotActive: {
+    backgroundColor: Colors.primary,
+  },
+  dotInactive: {
+    backgroundColor: Colors.white,
+    opacity: 0.5,
   },
   details: {
-    padding: spacing.md,
+    padding: Spacing.screenH,
   },
-  name: {
-    ...typography.heading,
-    color: colors.textPrimary,
-    marginBottom: spacing.xs,
-  },
-  ratingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.md,
-  },
-  stars: {
-    fontSize: 14,
-    marginRight: spacing.xs,
-  },
-  ratingValue: {
-    ...typography.caption,
-    color: colors.textSecondary,
+  title: {
+    fontFamily: 'ClashDisplay-Medium',
+    fontSize: 24,
+    color: Colors.black,
+    marginBottom: 8,
   },
   priceRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: spacing.sm,
+    marginBottom: 8,
   },
   price: {
-    ...typography.display,
-    color: colors.textPrimary,
+    fontFamily: 'ClashDisplay-Semibold',
+    fontSize: 24,
+    color: Colors.primary,
+    marginRight: 8,
   },
-  discountPrice: {
-    ...typography.display,
-    color: colors.error,
+  oldPrice: {
+    ...(Typography.priceOld as any),
+    marginRight: 12,
   },
-  originalPrice: {
-    ...typography.body,
-    color: colors.textSecondary,
-    textDecorationLine: 'line-through',
-    marginLeft: spacing.sm,
+  discountBadge: {
+    backgroundColor: Colors.primaryLight,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: Radius.sm,
   },
-  stockWarning: {
-    ...typography.caption,
-    color: colors.warning,
-    fontWeight: '600',
-    marginBottom: spacing.md,
+  discountText: {
+    fontFamily: 'GeneralSans-Medium',
+    fontSize: 12,
+    color: Colors.primary,
   },
-  outOfStock: {
-    ...typography.body,
-    color: colors.error,
-    fontWeight: '600',
-    marginBottom: spacing.md,
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  ratingText: {
+    fontFamily: 'GeneralSans-Regular',
+    fontSize: 15,
+    color: Colors.gray700,
+    marginLeft: 6,
   },
   variantSection: {
-    marginBottom: spacing.md,
+    marginBottom: 24,
   },
-  variantLabel: {
-    ...typography.body,
-    color: colors.textPrimary,
-    fontWeight: '600',
-    marginBottom: spacing.sm,
+  sectionTitle: {
+    ...(Typography.h2 as any),
+    marginBottom: 12,
   },
   variantOptions: {
     flexDirection: 'row',
     flexWrap: 'wrap',
   },
   qtySection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.md,
-  },
-  qtyLabel: {
-    ...typography.body,
-    color: colors.textPrimary,
-    fontWeight: '600',
-    marginRight: spacing.md,
+    marginBottom: 24,
   },
   stepper: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: borderRadius.card,
-    overflow: 'hidden',
+    backgroundColor: Colors.gray100,
+    alignSelf: 'flex-start',
+    borderRadius: Radius.full,
+    paddingHorizontal: 4,
+    paddingVertical: 4,
   },
   stepperBtn: {
     width: 36,
     height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.white,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.secondaryBg,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
-  stepperText: {
-    ...typography.body,
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.textPrimary,
+  qtyText: {
+    fontFamily: 'GeneralSans-Medium',
+    fontSize: 16,
+    width: 40,
+    textAlign: 'center',
   },
-  qtyValue: {
-    ...typography.body,
-    fontWeight: '600',
-    paddingHorizontal: spacing.md,
+  divider: {
+    height: 1,
+    backgroundColor: Colors.gray100,
+    marginVertical: 24,
   },
   descriptionSection: {
-    marginBottom: spacing.md,
+    marginBottom: 24,
   },
-  sectionTitle: {
-    ...typography.heading,
-    color: colors.textPrimary,
-    marginBottom: spacing.sm,
+  descriptionText: {
+    fontFamily: 'GeneralSans-Regular',
+    fontSize: 15,
+    color: Colors.gray700,
+    lineHeight: 24,
   },
-  description: {
-    ...typography.body,
-    color: colors.textSecondary,
-    lineHeight: 22,
-  },
-  specSection: {
-    marginBottom: spacing.lg,
-  },
-  specRow: {
-    flexDirection: 'row',
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  specKey: {
-    ...typography.body,
-    color: colors.textSecondary,
-    width: 120,
-  },
-  specValue: {
-    ...typography.body,
-    color: colors.textPrimary,
-    flex: 1,
-  },
-  bottomBar: {
+  bottomDock: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    flexDirection: 'row',
-    padding: spacing.md,
+    backgroundColor: Colors.white,
+    paddingHorizontal: Spacing.screenH,
+    paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
-    backgroundColor: colors.background,
+    borderTopColor: Colors.gray100,
   },
-  addToCartBtn: {
-    flex: 1,
-    marginRight: spacing.sm,
+  dockRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
-  buyNowBtn: {
-    flex: 1,
-  },
-})
+});

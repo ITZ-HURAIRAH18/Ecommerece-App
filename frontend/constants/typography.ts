@@ -1,52 +1,22 @@
-import { Platform, TextStyle } from 'react-native'
+import { Typography } from './tokens'
 
-const fontFamily = Platform.select({
-  ios: 'System',
-  android: 'Roboto',
-  default: 'System',
-})
-
-export const typography: Record<string, TextStyle> = {
-  display: {
-    fontFamily,
-    fontSize: 28,
-    lineHeight: 36,
-    fontWeight: '700',
-  },
+export const typography = {
+  display: Typography.display,
   displaySmall: {
-    fontFamily,
-    fontSize: 32,
-    lineHeight: 40,
-    fontWeight: '700',
+    fontFamily: 'ClashDisplay-Medium',
+    fontSize: 28,
+    lineHeight: 34,
+    letterSpacing: -0.3,
   },
-  heading: {
-    fontFamily,
-    fontSize: 20,
-    lineHeight: 28,
-    fontWeight: '600',
-  },
-  body: {
-    fontFamily,
-    fontSize: 14,
-    lineHeight: 20,
-    fontWeight: '400',
-  },
-  bodyLarge: {
-    fontFamily,
-    fontSize: 16,
-    lineHeight: 24,
-    fontWeight: '400',
-  },
-  caption: {
-    fontFamily,
-    fontSize: 12,
-    lineHeight: 16,
-    fontWeight: '400',
-  },
+  heading: Typography.h1,
+  body: Typography.body,
+  bodyMedium: Typography.bodyMedium,
+  caption: Typography.small,
+  label: Typography.label,
   button: {
-    fontFamily,
-    fontSize: 15,
-    lineHeight: 20,
-    fontWeight: '600',
+    fontFamily: 'GeneralSans-Medium',
+    fontSize: 16,
+    lineHeight: 22,
+    color: '#FFFFFF',
   },
 }

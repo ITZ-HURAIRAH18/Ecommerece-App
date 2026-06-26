@@ -1,151 +1,230 @@
-import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native'
-import { useRouter } from 'expo-router'
-import { useState } from 'react'
-import { colors } from '../../constants/colors'
-import { spacing } from '../../constants/spacing'
-import { typography } from '../../constants/typography'
-import { Input } from '../../components/ui/Input'
-import { Button } from '../../components/ui/Button'
-import { useAuthStore } from '../../stores/authStore'
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Pressable } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Feather } from '@expo/vector-icons';
+import { Colors, Spacing, Typography } from '../../constants/tokens';
+import { Input } from '../../components/Input';
+import { Button } from '../../components/Button';
+import { useAuthStore } from '../../stores/authStore';
 
 export default function LoginScreen() {
-  const router = useRouter()
-  const { login } = useAuthStore()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const router = useRouter();
+  const { login } = useAuthStore();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleLogin = async () => {
     if (!email || !password) {
-      setError('Please fill in all fields')
-      return
+      setError('Please fill in all fields');
+      return;
     }
-    setLoading(true)
-    setError('')
+    setLoading(true);
+    setError('');
     try {
-      await login(email, password)
-      router.replace('/(tabs)')
+      await login(email, password);
+      router.replace('/(tabs)');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Login failed')
+      setError(err.response?.data?.message || 'Login failed');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <ScrollView
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
+    <View style={styles.container}>
+      <KeyboardAvoidingView
+        style={styles.keyboardView}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <Text style={styles.logo}>ShopEase</Text>
-        <Text style={styles.title}>Welcome back</Text>
-        <Text style={styles.subtitle}>Sign in to your account</Text>
-
-        {error ? <Text style={styles.error}>{error}</Text> : null}
-
-        <Input
-          label="Email"
-          value={email}
-          onChangeText={setEmail}
-          placeholder="Enter your email"
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
-        <Input
-          label="Password"
-          value={password}
-          onChangeText={setPassword}
-          placeholder="Enter your password"
-          secureTextEntry
-        />
-        <Button
-          title="Sign In"
-          onPress={handleLogin}
-          loading={loading}
-          style={styles.button}
-        />
-
-        <Text
-          style={styles.forgot}
-          onPress={() => router.push('/(auth)/forgot-password')}
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-          Forgot password?
-        </Text>
+          {/* TOP SECTION (approx 40%) */}
+          <View style={styles.topSection}>
+            <Pressable style={styles.backButton} onPress={() => router.back()}>
+              <Feather name="chevron-left" size={24} color={Colors.black} />
+            </Pressable>
+            <View style={styles.headerTextContainer}>
+              <Text style={styles.title}>Welcome back.</Text>
+              <Text style={styles.subtitle}>Sign in to continue shopping</Text>
+            </View>
+          </View>
 
-        <View style={styles.signupRow}>
-          <Text style={styles.signupText}>Don't have an account? </Text>
-          <Text
-            style={styles.signupLink}
-            onPress={() => router.push('/(auth)/register')}
-          >
-            Sign Up
-          </Text>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
-  )
+          {/* FORM SECTION */}
+          <View style={styles.formSection}>
+            {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+            <Input
+              label="Email address"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            
+            <View style={styles.gap16} />
+            
+            <Input
+              label="Password"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPassword}
+              rightIcon={
+                <Feather 
+                  name={showPassword ? 'eye-off' : 'eye'} 
+                  size={20} 
+                  color={Colors.gray500} 
+                />
+              }
+              onRightIconPress={() => setShowPassword(!showPassword)}
+            />
+
+            <View style={styles.gap8} />
+
+            <Pressable style={styles.forgotWrapper} onPress={() => router.push('/(auth)/forgot-password')}>
+              <Text style={styles.forgotText}>Forgot password?</Text>
+            </Pressable>
+
+            <View style={styles.gap32} />
+
+            <Button
+              variant="primary"
+              size="lg"
+              fullWidth
+              onPress={handleLogin}
+              loading={loading}
+            >
+              Sign in
+            </Button>
+
+            <View style={styles.gap24} />
+
+            <View style={styles.dividerRow}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>or</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            <View style={styles.gap24} />
+
+            <Button
+              variant="secondary"
+              size="lg"
+              fullWidth
+              onPress={() => {}}
+            >
+              Continue with Google
+            </Button>
+
+            <View style={styles.gap24} />
+
+            <View style={styles.bottomRow}>
+              <Text style={styles.bottomText}>Don't have an account? </Text>
+              <Pressable onPress={() => router.push('/(auth)/register')}>
+                <Text style={styles.bottomLink}>Create one</Text>
+              </Pressable>
+            </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: Colors.white,
   },
-  content: {
+  keyboardView: {
+    flex: 1,
+  },
+  scrollContent: {
     flexGrow: 1,
-    justifyContent: 'center',
-    padding: spacing.lg,
+    paddingHorizontal: Spacing.screenH,
   },
-  logo: {
-    ...typography.displaySmall,
-    color: colors.primary,
-    textAlign: 'center',
-    marginBottom: spacing.sm,
+  topSection: {
+    minHeight: '40%',
+    paddingTop: 60,
+    justifyContent: 'center',
+  },
+  backButton: {
+    position: 'absolute',
+    top: 60,
+    left: 0,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    zIndex: 10,
+  },
+  headerTextContainer: {
+    marginTop: 40,
   },
   title: {
-    ...typography.display,
-    color: colors.textPrimary,
-    textAlign: 'center',
+    ...(Typography.display as any),
+    fontSize: 32,
+    marginBottom: 8,
   },
   subtitle: {
-    ...typography.body,
-    color: colors.textSecondary,
+    ...(Typography.body as any),
+    color: Colors.gray500,
+  },
+  formSection: {
+    paddingBottom: 40,
+  },
+  gap8: { height: 8 },
+  gap16: { height: 16 },
+  gap24: { height: 24 },
+  gap32: { height: 32 },
+  errorText: {
+    ...(Typography.small as any),
+    color: Colors.error,
+    marginBottom: 16,
     textAlign: 'center',
-    marginBottom: spacing.xl,
   },
-  error: {
-    ...typography.caption,
-    color: colors.error,
-    textAlign: 'center',
-    marginBottom: spacing.md,
+  forgotWrapper: {
+    alignSelf: 'flex-end',
   },
-  button: {
-    marginTop: spacing.sm,
+  forgotText: {
+    fontFamily: 'GeneralSans-Medium',
+    fontSize: 13,
+    color: Colors.primary,
   },
-  forgot: {
-    ...typography.body,
-    color: colors.primary,
-    textAlign: 'center',
-    marginTop: spacing.md,
-    fontWeight: '600',
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  signupRow: {
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: Colors.gray300,
+  },
+  dividerText: {
+    fontFamily: 'GeneralSans-Regular',
+    fontSize: 13,
+    color: Colors.gray500,
+    paddingHorizontal: 16,
+  },
+  bottomRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: spacing.xl,
+    alignItems: 'center',
   },
-  signupText: {
-    ...typography.body,
-    color: colors.textSecondary,
+  bottomText: {
+    fontFamily: 'GeneralSans-Regular',
+    fontSize: 14,
+    color: Colors.gray700,
   },
-  signupLink: {
-    ...typography.body,
-    color: colors.primary,
-    fontWeight: '600',
+  bottomLink: {
+    fontFamily: 'GeneralSans-Medium',
+    fontSize: 14,
+    color: Colors.primary,
   },
-})
+});

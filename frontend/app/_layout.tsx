@@ -3,6 +3,16 @@ import { StatusBar } from 'expo-status-bar'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useEffect } from 'react'
 import * as SplashScreen from 'expo-splash-screen'
+import { useFonts } from 'expo-font'
+import { 
+  Chivo_400Regular, 
+  Chivo_500Medium, 
+  Chivo_600SemiBold 
+} from '@expo-google-fonts/chivo'
+import { 
+  HankenGrotesk_400Regular, 
+  HankenGrotesk_500Medium 
+} from '@expo-google-fonts/hanken-grotesk'
 import { useAuthStore } from '../stores/authStore'
 
 SplashScreen.preventAutoHideAsync()
@@ -12,15 +22,26 @@ const queryClient = new QueryClient()
 function RootLayoutNav() {
   const { restoreSession, isLoading } = useAuthStore()
 
+  const [fontsLoaded, fontError] = useFonts({
+    'ClashDisplay-Medium': Chivo_500Medium,
+    'ClashDisplay-Semibold': Chivo_600SemiBold,
+    'GeneralSans-Regular': HankenGrotesk_400Regular,
+    'GeneralSans-Medium': HankenGrotesk_500Medium,
+  })
+
   useEffect(() => {
     restoreSession()
   }, [])
 
   useEffect(() => {
-    if (!isLoading) {
+    if (!isLoading && (fontsLoaded || fontError)) {
       SplashScreen.hideAsync()
     }
-  }, [isLoading])
+  }, [isLoading, fontsLoaded, fontError])
+
+  if (!fontsLoaded && !fontError) {
+    return null
+  }
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
