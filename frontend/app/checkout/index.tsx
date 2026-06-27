@@ -1,27 +1,32 @@
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native'
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert, Pressable } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { colors } from '../../constants/colors'
 import { spacing, borderRadius } from '../../constants/spacing'
 import { typography } from '../../constants/typography'
 import { Input } from '../../components/ui/Input'
-import { Button } from '../../components/ui/Button'
 import { CartSummary } from '../../components/cart/CartSummary'
 import { useCartStore } from '../../stores/cartStore'
+import { useCheckoutStore } from '../../stores/checkoutStore'
 
 export default function CheckoutScreen() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
-  const { items, total } = useCartStore()
+  const { items, total, fetchCart } = useCartStore()
+  const { setAddress } = useCheckoutStore()
 
   const [fullName, setFullName] = useState('')
   const [phone, setPhone] = useState('')
   const [street, setStreet] = useState('')
   const [city, setCity] = useState('')
-  const [state, setState] = useState('')
+  const [stateProvince, setStateProvince] = useState('')
   const [zip, setZip] = useState('')
   const [country, setCountry] = useState('')
+
+  useEffect(() => {
+    fetchCart()
+  }, [])
 
   const subtotal = total
   const shipping = subtotal >= 500 ? 0 : 49
@@ -29,12 +34,28 @@ export default function CheckoutScreen() {
   const grandTotal = subtotal + shipping - discount
 
   const handleContinue = () => {
-    if (!fullName || !phone || !street || !city || !state || !zip || !country) {
-      Alert.alert('Missing Fields', 'Please fill in all shipping address fields.')
-      return
+    try {
+      if (!fullName || !phone || !street || !city || !stateProvince || !zip || !country) {
+        Alert.alert('Missing Fields', 'Please fill in all shipping address fields.')
+        return
+      }
+      setAddress({
+        label: 'Shipping Address',
+        fullName,
+        phone,
+        street,
+        city,
+        state: stateProvince,
+        zip,
+        country,
+        isDefault: true,
+      })
+      setTimeout(() => {
+        router.push('/checkout/payment')
+      }, 100)
+    } catch (e) {
+      Alert.alert('Error', 'Something went wrong. Please try again.')
     }
-    const address = JSON.stringify({ label: 'Shipping Address', fullName, phone, street, city, state, zip, country, isDefault: true })
-    router.push(`/checkout/payment?address=${encodeURIComponent(address)}`)
   }
 
   return (
@@ -55,7 +76,7 @@ export default function CheckoutScreen() {
         <Input label="Street Address" value={street} onChangeText={setStreet} placeholder="123 Main St" />
         <View style={styles.row}>
           <Input label="City" value={city} onChangeText={setCity} placeholder="New York" style={{ flex: 1, marginRight: spacing.sm }} />
-          <Input label="State" value={state} onChangeText={setState} placeholder="NY" style={{ flex: 1 }} />
+          <Input label="State" value={stateProvince} onChangeText={setStateProvince} placeholder="NY" style={{ flex: 1 }} />
         </View>
         <Input label="ZIP Code" value={zip} onChangeText={setZip} placeholder="10001" />
         <Input label="Country" value={country} onChangeText={setCountry} placeholder="United States" />
@@ -69,7 +90,15 @@ export default function CheckoutScreen() {
       </ScrollView>
 
       <View style={styles.bottom}>
-        <Button title="Continue to Payment" onPress={handleContinue} size="lg" />
+        <Pressable
+          style={({ pressed }) => [
+            styles.payButton,
+            pressed && styles.payButtonPressed,
+          ]}
+          onPress={handleContinue}
+        >
+          <Text style={styles.payButtonText}>Continue to Payment</Text>
+        </Pressable>
       </View>
     </View>
   )
@@ -115,5 +144,20 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     borderTopWidth: 1,
     borderTopColor: colors.border,
+  },
+  payButton: {
+    height: 54,
+    backgroundColor: colors.primary,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  payButtonPressed: {
+    opacity: 0.85,
+  },
+  payButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
 })

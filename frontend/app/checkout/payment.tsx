@@ -1,12 +1,14 @@
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from 'react-native'
-import { useRouter, useLocalSearchParams } from 'expo-router'
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native'
+import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { colors } from '../../constants/colors'
 import { spacing, borderRadius } from '../../constants/spacing'
 import { typography } from '../../constants/typography'
 import { Button } from '../../components/ui/Button'
 import { orderService } from '../../services/orderService'
+import { useCartStore } from '../../stores/cartStore'
+import { useCheckoutStore } from '../../stores/checkoutStore'
 
 const paymentMethods = [
   { id: 'cod', label: 'Cash on Delivery', icon: '💵', description: 'Pay when you receive' },
@@ -17,23 +19,33 @@ const paymentMethods = [
 export default function PaymentScreen() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
-  const { address } = useLocalSearchParams<{ address: string }>()
+  const { address, clearAddress } = useCheckoutStore()
   const [selected, setSelected] = useState('cod')
   const [placing, setPlacing] = useState(false)
+  const { clearCart } = useCartStore()
+
+  useEffect(() => {
+    if (!address) {
+      Alert.alert('Missing Address', 'No shipping address found. Please go back and fill in your details.')
+      router.back()
+    }
+  }, [])
 
   const handlePlaceOrder = async () => {
     if (!address) {
       Alert.alert('Error', 'Shipping address is missing. Please go back and fill in your details.')
       return
     }
+
     setPlacing(true)
     try {
-      const shippingAddress = JSON.parse(address)
       const { data } = await orderService.placeOrder({
-        shippingAddress,
+        shippingAddress: address as Record<string, unknown>,
         paymentMethod: selected,
       })
       const orderId = data.data._id
+      await clearCart()
+      clearAddress()
       router.replace(`/checkout/success?orderId=${orderId}`)
     } catch (err: any) {
       Alert.alert('Order Failed', err?.response?.data?.message || 'Could not place order. Please try again.')
