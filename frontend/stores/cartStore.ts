@@ -47,7 +47,9 @@ export const useCartStore = create<CartStore>((set, get) => ({
         total: cart.total || 0,
         itemCount: cart.itemCount || 0,
       })
-    } catch {
+      console.log('Cart fetched successfully:', { items: cart.items?.length, total: cart.total })
+    } catch (error) {
+      console.error('Error fetching cart:', error)
     } finally {
       set({ isLoading: false })
     }

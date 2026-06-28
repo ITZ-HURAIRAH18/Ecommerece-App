@@ -20,12 +20,16 @@ export default function CheckoutScreen() {
   const [phone, setPhone] = useState('')
   const [street, setStreet] = useState('')
   const [city, setCity] = useState('')
-  const [stateProvince, setStateProvince] = useState('')
+  const [state, setState] = useState('')
   const [zip, setZip] = useState('')
   const [country, setCountry] = useState('')
 
   useEffect(() => {
-    fetchCart()
+    fetchCart().then(() => {
+      console.log('Cart fetched:', { items: items.length, total })
+    }).catch(err => {
+      console.error('Error fetching cart:', err)
+    })
   }, [])
 
   const subtotal = total
@@ -33,27 +37,37 @@ export default function CheckoutScreen() {
   const discount = 0
   const grandTotal = subtotal + shipping - discount
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     try {
-      if (!fullName || !phone || !street || !city || !stateProvince || !zip || !country) {
-        Alert.alert('Missing Fields', 'Please fill in all shipping address fields.')
+      console.log('handleContinue called')
+      console.log('Form values:', { fullName, phone, street, city, state, zip, country })
+      
+      if (!fullName || !phone || !street || !city || !state || !zip || !country) {
+        Alert.alert('Missing Fields', 'Please fill in all required fields.')
+        console.log('Validation failed - missing fields')
         return
       }
+
+      console.log('Setting address in checkout store:', { fullName, phone, street, city, state, zip, country })
       setAddress({
         label: 'Shipping Address',
         fullName,
         phone,
         street,
         city,
-        state: stateProvince,
+        state,
         zip,
         country,
         isDefault: true,
       })
-      setTimeout(() => {
-        router.push('/checkout/payment')
-      }, 100)
+      
+      // Wait for store to update before navigating
+      await new Promise((resolve) => setTimeout(resolve, 500))
+      console.log('Navigating to payment page')
+      router.push('/checkout/payment')
+      console.log('Navigation called')
     } catch (e) {
+      console.error('Checkout error:', e)
       Alert.alert('Error', 'Something went wrong. Please try again.')
     }
   }
@@ -74,10 +88,51 @@ export default function CheckoutScreen() {
         <Input label="Full Name" value={fullName} onChangeText={setFullName} placeholder="John Doe" />
         <Input label="Phone" value={phone} onChangeText={setPhone} placeholder="+1 234 567 8900" keyboardType="phone-pad" />
         <Input label="Street Address" value={street} onChangeText={setStreet} placeholder="123 Main St" />
-        <View style={styles.row}>
-          <Input label="City" value={city} onChangeText={setCity} placeholder="New York" style={{ flex: 1, marginRight: spacing.sm }} />
-          <Input label="State" value={stateProvince} onChangeText={setStateProvince} placeholder="NY" style={{ flex: 1 }} />
-        </View>
+        <Input label="City" value={city} onChangeText={setCity} placeholder="New York" />
+        <Input label="State" value={state} onChangeText={setState} placeholder="NY" />
+        <Input label="ZIP Code" value={zip} onChangeText={setZip} placeholder="10001" />
+        <Input label="Country" value={country} onChangeText={setCountry} placeholder="United States" />
+
+        <CartSummary
+          subtotal={subtotal}
+          shipping={shipping}
+          discount={discount}
+          total={grandTotal}
+        />
+      </ScrollView>
+
+      <View style={styles.bottom}>
+        <Pressable
+          style={({ pressed }) => [
+            styles.payButton,
+            pressed && styles.payButtonPressed,
+          ]}
+          onPress={handleContinue}
+        >
+          <Text style={styles.payButtonText}>Continue to Payment</Text>
+        </Pressable>
+      </View>
+    </View>
+  )
+
+  return (
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Text style={styles.back}>← Back</Text>
+        </TouchableOpacity>
+        <Text style={styles.title}>Checkout</Text>
+        <View style={{ width: 50 }} />
+      </View>
+
+      <ScrollView showsVerticalScrollIndicator={false} style={styles.scroll}>
+        <Text style={styles.stepLabel}>Step 1 of 3 — Shipping Address</Text>
+
+        <Input label="Full Name" value={fullName} onChangeText={setFullName} placeholder="John Doe" />
+        <Input label="Phone" value={phone} onChangeText={setPhone} placeholder="+1 234 567 8900" keyboardType="phone-pad" />
+        <Input label="Street Address" value={street} onChangeText={setStreet} placeholder="123 Main St" />
+        <Input label="City" value={city} onChangeText={setCity} placeholder="New York" />
+        <Input label="State" value={state} onChangeText={setState} placeholder="NY" />
         <Input label="ZIP Code" value={zip} onChangeText={setZip} placeholder="10001" />
         <Input label="Country" value={country} onChangeText={setCountry} placeholder="United States" />
 

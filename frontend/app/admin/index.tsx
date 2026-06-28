@@ -10,6 +10,7 @@ import { adminService } from '../../services/adminService'
 const menuItems = [
   { title: 'Products', icon: '📦', route: '/admin/products' },
   { title: 'Categories', icon: '📂', route: '/admin/categories' },
+  { title: 'Brands', icon: '🏷️', route: '/admin/brands' },
   { title: 'Orders', icon: '📋', route: '/admin/orders' },
   { title: 'Banners', icon: '🖼️', route: '/admin/banners' },
   { title: 'Users', icon: '👥', route: '/admin/users' },

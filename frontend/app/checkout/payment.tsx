@@ -25,11 +25,14 @@ export default function PaymentScreen() {
   const { clearCart } = useCartStore()
 
   useEffect(() => {
+    console.log('Payment screen - Address:', address)
     if (!address) {
-      Alert.alert('Missing Address', 'No shipping address found. Please go back and fill in your details.')
-      router.back()
+      Alert.alert('Missing Address', 'No shipping address found. Please go back and fill in your details.', [
+        { text: 'Go Back', onPress: () => router.back() }
+      ])
+      return
     }
-  }, [])
+  }, [address, router])
 
   const handlePlaceOrder = async () => {
     if (!address) {
@@ -48,7 +51,9 @@ export default function PaymentScreen() {
       clearAddress()
       router.replace(`/checkout/success?orderId=${orderId}`)
     } catch (err: any) {
-      Alert.alert('Order Failed', err?.response?.data?.message || 'Could not place order. Please try again.')
+      console.error('Order placement error:', err)
+      const errorMessage = err?.response?.data?.message || err?.message || 'Could not place order. Please try again.'
+      Alert.alert('Order Failed', errorMessage)
     } finally {
       setPlacing(false)
     }
