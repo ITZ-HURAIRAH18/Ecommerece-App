@@ -23,7 +23,7 @@ function CartItem({ item }: { item: any }) {
 
   return (
     <Animated.View style={[styles.cartItem, animatedStyle]}>
-      <Image source={item.image || 'https://via.placeholder.com/150'} style={styles.itemImage} contentFit="cover" />
+      <Image source={item.image || 'https://placehold.co/150x150?text=Product'} style={styles.itemImage} contentFit="cover" />
       <View style={styles.itemContent}>
         <View style={styles.itemHeader}>
           <Text style={styles.itemName} numberOfLines={2}>{item.name}</Text>

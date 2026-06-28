@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "ShopEase",
-    "slug": "shopease",
+    "slug": "aextn",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -10,7 +10,9 @@
     "splash": {
       "backgroundColor": "#FF6B00"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.shopease.app"
@@ -24,6 +26,13 @@
     "plugins": [
       "expo-router",
       "expo-secure-store"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "db853074-be90-4f48-b50d-f5b3edbc84e8"
+      }
+    },
+    "owner": "abuhurxs-team"
   }
 }

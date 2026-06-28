@@ -23,7 +23,10 @@ app.use(express.urlencoded({ extended: true }))
 app.get('/api/health', (_req, res) => {
   res.json({ success: true, message: 'Server is running' })
 })
-
+app.use('/api/health', (req, res) => {
+    console.log("Server is Running");
+    res.send("Server is Running");
+});
 app.use('/api/auth', authRoutes)
 app.use('/api/products', productRoutes)
 app.use('/api/categories', categoryRoutes)

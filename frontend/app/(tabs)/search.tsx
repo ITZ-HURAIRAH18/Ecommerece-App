@@ -142,7 +142,7 @@ export default function SearchScreen() {
                 name: item.name,
                 price: item.price,
                 oldPrice: item.price * 1.2,
-                image: item.images[0]?.url || 'https://via.placeholder.com/150',
+                image: item.images[0]?.url || 'https://placehold.co/150x150?text=Product',
                 category: item.category?.name?.replace(/[^a-zA-Z ]/g, '') || 'Category',
                 rating: item.ratings || 4.5,
                 reviews: item.numOfReviews || 12,
