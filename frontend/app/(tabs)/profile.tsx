@@ -35,7 +35,12 @@ export default function ProfileScreen() {
     { icon: 'credit-card', title: 'Payment Methods', route: '/settings' },
     { icon: 'map-pin', title: 'Shipping Addresses', route: '/settings' },
     { icon: 'settings', title: 'Settings', route: '/settings' },
-  ];
+  ]
+
+  // Add Admin option for admin users
+  if (user?.role === 'admin') {
+    menuItems.unshift({ icon: 'shield', title: 'Admin Dashboard', route: '/admin' })
+  };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>

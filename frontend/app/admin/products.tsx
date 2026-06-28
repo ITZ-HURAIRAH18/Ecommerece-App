@@ -16,13 +16,18 @@ export default function AdminProducts() {
   const queryClient = useQueryClient()
   const [page, setPage] = useState(1)
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ['admin', 'products', page],
     queryFn: () => adminService.getProducts(page),
   })
 
   const products = data?.data?.data || []
   const pagination = data?.data?.pagination
+
+  useEffect(() => {
+    console.log('Products data:', data)
+    console.log('Products error:', error)
+  }, [data, error])
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => adminService.deleteProduct(id),

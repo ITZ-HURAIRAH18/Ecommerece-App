@@ -19,12 +19,17 @@ export default function AdminCategories() {
   const [catName, setCatName] = useState('')
   const [catIcon, setCatIcon] = useState('')
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ['categories'],
     queryFn: categoryService.getAll,
   })
 
   const categories = data?.data?.data || []
+
+  useEffect(() => {
+    console.log('Categories data:', data)
+    console.log('Categories error:', error)
+  }, [data, error])
 
   const createMutation = useMutation({
     mutationFn: (fd: FormData) => adminService.createCategory ? adminService.createCategory(fd) : categoryService.create({ name: catName, icon: catIcon }),

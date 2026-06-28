@@ -19,6 +19,7 @@ export default function AdminLayout() {
       <Stack.Screen name="categories" />
       <Stack.Screen name="orders" />
       <Stack.Screen name="banners" />
+      <Stack.Screen name="brands" />
       <Stack.Screen name="users" />
       <Stack.Screen name="product-form" />
     </Stack>
